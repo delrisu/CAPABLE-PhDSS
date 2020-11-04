@@ -16,8 +16,8 @@ public class Pathway {
     private String vcshash;
     private String category;
     private String coding;
-    private String deleted;
-    private String temp;
-    private String mtime;
+    private boolean deleted;
+    private boolean temp;
+    private long mtime;
     private String id;
 }
