@@ -14,4 +14,5 @@ public class ItemData {
     private ArrayList<Range> range;
     private String defaultvalue;
     private String dynamic;
+    private String metaprops;
 }
