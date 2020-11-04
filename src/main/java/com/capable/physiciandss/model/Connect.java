@@ -8,5 +8,5 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class Connect {
-    private String dressessionid;
+    private String dresessionid;
 }
