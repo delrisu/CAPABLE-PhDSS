@@ -1,8 +1,11 @@
 package com.capable.physiciandss.requests;
 
 
+import com.capable.physiciandss.configuration.WebClientConfig;
 import com.capable.physiciandss.model.Enactment;
 import com.capable.physiciandss.utils.Constants;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
@@ -14,10 +17,8 @@ public class RequestServiceWS {
     WebClient webClient;
 
     public RequestServiceWS() {
-        webClient = WebClient.builder()
-                .baseUrl(Constants.BASE_URL)
-                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                .build();
+        ApplicationContext context = new AnnotationConfigApplicationContext(WebClientConfig.class);
+        webClient = context.getBean("webClient", WebClient.class);
     }
 
     public Enactment[] getEnactments() {
