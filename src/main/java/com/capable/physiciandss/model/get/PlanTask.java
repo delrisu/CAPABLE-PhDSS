@@ -1,4 +1,4 @@
-package com.capable.physiciandss.model;
+package com.capable.physiciandss.model.get;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

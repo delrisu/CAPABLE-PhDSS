@@ -1,9 +1,9 @@
 package com.capable.physiciandss.requests;
 
-import com.capable.physiciandss.model.Connect;
-import com.capable.physiciandss.model.Enactment;
-import com.capable.physiciandss.model.ItemData;
-import com.capable.physiciandss.model.Pathway;
+import com.capable.physiciandss.model.get.Connect;
+import com.capable.physiciandss.model.get.Enactment;
+import com.capable.physiciandss.model.get.ItemData;
+import com.capable.physiciandss.model.get.Pathway;
 import com.capable.physiciandss.utils.Constants;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
