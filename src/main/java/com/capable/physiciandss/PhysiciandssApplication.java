@@ -36,16 +36,18 @@ public class PhysiciandssApplication {
                                     ) {
                                         System.out.println(d);
                                         RS.putDataValue(d.getName(), "2", connect.getDresessionid()).subscribe(res -> {
+                                            System.out.println("Dodanie data value:" + res.isSuccess());
                                         });
                                     }
 
-                                    //RS.putConfirmTask(task.getName(), connect.getDresessionid()).subscribe(ct -> System.out.println(ct.getState()));
                                 });
+
+                                //RS.putConfirmTask(task.getName(), connect.getDresessionid()).subscribe(ct -> System.out.println(ct.getState()));
                             }
 
                         }
                     });
-                    RS.putEnactmentDelete(enact.getEnactmentid(), connect.getDresessionid());
+                    RS.putEnactmentDelete(enact.getEnactmentid(), connect.getDresessionid()).subscribe(st -> System.out.println("Usuniecie enact:" + st.getDeleted()));
                 });
             });
         });

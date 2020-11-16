@@ -126,7 +126,7 @@ public class RequestServiceWS {
                 .uri(
                         uriBuilder -> uriBuilder
                                 .path(Constants.PRS_API_URL + "/EnactmentDelete")
-                                .queryParam("enactmentid", enactmentid)
+                                .queryParam("id", enactmentid)
                                 .build())
                 .header("x-dresessionid", sessionId)
                 .retrieve()
