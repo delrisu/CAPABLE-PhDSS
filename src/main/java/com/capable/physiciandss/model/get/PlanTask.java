@@ -1,5 +1,6 @@
 package com.capable.physiciandss.model.get;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -12,7 +13,7 @@ public class PlanTask {
     private long runtimeid;
     private String caption;
     private String description;
-    private String metaprops;
+    private JsonNode metaprops;
     private String type;
     private String state;
     private String context;

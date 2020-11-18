@@ -49,7 +49,7 @@ public class RequestServiceWS {
                 .uri(uriBuilder -> uriBuilder
                         .path(Constants.DRE_API_URL + "/Data")
                         .queryParam("enquiryname", enquiryName)
-                        .queryParam("metaprops", "false")
+                        .queryParam("metaprops", "true")
                         .build())
                 .header("x-dresessionid", sessionId)
                 .retrieve()
@@ -88,7 +88,7 @@ public class RequestServiceWS {
                                 .queryParam("root", "true")
                                 .queryParam("recursive", "true")
                                 .queryParam("flat", "true")
-                                .queryParam("metaprops", "false")
+                                .queryParam("metaprops", "true")
                                 .build())
                 .header("x-dresessionid", sessionId)
                 .retrieve()

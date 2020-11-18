@@ -1,5 +1,6 @@
 package com.capable.physiciandss.model.get;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -21,5 +22,5 @@ public class ItemData {
     private ArrayList<Range> range;
     private String defaultvalue;
     private String dynamic;
-    private String metaprops;
+    private JsonNode metaprops;
 }
