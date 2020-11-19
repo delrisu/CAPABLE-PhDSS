@@ -2,7 +2,7 @@ package com.capable.physiciandss;
 
 import com.capable.physiciandss.model.get.ItemData;
 import com.capable.physiciandss.model.get.PlanTask;
-import com.capable.physiciandss.requests.RequestServiceWS;
+import com.capable.physiciandss.requests.RequestService;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
@@ -14,7 +14,7 @@ public class PhysiciandssApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(PhysiciandssApplication.class, args);
-        RequestServiceWS RS = new RequestServiceWS();
+        RequestService RS = new RequestService();
 
         RS.getPathway(false).subscribe(pathways -> {
             System.out.println(Arrays.toString(pathways));
