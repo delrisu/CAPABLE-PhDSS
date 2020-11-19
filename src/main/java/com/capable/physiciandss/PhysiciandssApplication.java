@@ -37,20 +37,20 @@ public class PhysiciandssApplication {
                                         System.out.println(d);
                                         RS.putDataValue(d.getName(), "2", connect.getDresessionid()).subscribe(res -> {
                                             System.out.println("Dodanie data value:" + res.isSuccess());
-                                        });
+                                        }, ex -> System.out.println(ex.getMessage()));
                                     }
 
-                                });
+                                }, ex -> System.out.println(ex.getMessage()));
 
-                                //RS.putConfirmTask(task.getName(), connect.getDresessionid()).subscribe(ct -> System.out.println(ct.getState()));
+                                RS.putConfirmTask(task.getName(), connect.getDresessionid()).subscribe(ct -> System.out.println(ct.getState()), ex -> System.out.println(ex.getMessage()));
                             }
 
                         }
                     });
-                    RS.putEnactmentDelete(enact.getEnactmentid(), connect.getDresessionid()).subscribe(st -> System.out.println("Usuniecie enact:" + st.getDeleted()));
-                });
-            });
-        });
+                    RS.putEnactmentDelete(enact.getEnactmentid(), connect.getDresessionid()).subscribe(st -> System.out.println("Usuniecie enact:" + st.getDeleted()), ex -> System.out.println(ex.getMessage()));
+                }, ex -> System.out.println(ex.getMessage()));
+            }, ex -> System.out.println(ex.getMessage()));
+        }, ex -> System.out.println(ex.getMessage()));
 //        System.out.println(Arrays.toString(enactments));
 //        System.out.println(Arrays.toString(new RequestServiceWS().getPathway()));
 //        Connect connection = new RequestServiceWS().getConnection(enactments[0].getId());

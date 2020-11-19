@@ -9,11 +9,13 @@ import com.capable.physiciandss.model.put.*;
 import com.capable.physiciandss.utils.Constants;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.util.logging.Logger;
+
 
 @Service
 public class RequestServiceWS {
@@ -31,6 +33,9 @@ public class RequestServiceWS {
         return webClient.get()
                 .uri(Constants.PRS_API_URL + "/Enactments")
                 .retrieve()
+                .onStatus(HttpStatus::isError, response -> {
+                    return Mono.error(new IllegalStateException("getEnactments failed with error code: " + response.statusCode()));
+                })
                 .bodyToMono(Enactment[].class);
     }
 
@@ -41,6 +46,9 @@ public class RequestServiceWS {
                         .queryParam("temp", temp)
                         .build())
                 .retrieve()
+                .onStatus(HttpStatus::isError, response -> {
+                    return Mono.error(new IllegalStateException("getPathway failed with error code: " + response.statusCode()));
+                })
                 .bodyToMono(Pathway[].class);
     }
 
@@ -53,6 +61,9 @@ public class RequestServiceWS {
                         .build())
                 .header("x-dresessionid", sessionId)
                 .retrieve()
+                .onStatus(HttpStatus::isError, response -> {
+                    return Mono.error(new IllegalStateException("getData failed with error code: " + response.statusCode()));
+                })
                 .bodyToMono(ItemData[].class);
     }
 
@@ -64,6 +75,9 @@ public class RequestServiceWS {
                                 .queryParam("enactmentid", enactmentId)
                                 .build())
                 .retrieve()
+                .onStatus(HttpStatus::isError, response -> {
+                    return Mono.error(new IllegalStateException("getConnect failed with error code: " + response.statusCode()));
+                })
                 .bodyToMono(Connect.class);
     }
 
@@ -76,6 +90,9 @@ public class RequestServiceWS {
                                 .build())
                 .header("x-dresessionid", sessionId)
                 .retrieve()
+                .onStatus(HttpStatus::isError, response -> {
+                    return Mono.error(new IllegalStateException("getTask failed with error code: " + response.statusCode()));
+                })
                 .bodyToMono(PlanTask.class);
     }
 
@@ -92,6 +109,9 @@ public class RequestServiceWS {
                                 .build())
                 .header("x-dresessionid", sessionId)
                 .retrieve()
+                .onStatus(HttpStatus::isError, response -> {
+                    return Mono.error(new IllegalStateException("getPlanTasks failed with error code: " + response.statusCode()));
+                })
                 .bodyToMono(PlanTask[].class);
     }
 
@@ -100,6 +120,9 @@ public class RequestServiceWS {
                 .uri(Constants.DRE_API_URL + "/Enact")
                 .body(Mono.just(new EnactBody(pathwayid, patientid)), EnactBody.class)
                 .retrieve()
+                .onStatus(HttpStatus::isError, response -> {
+                    return Mono.error(new IllegalStateException("postEnact failed with error code: " + response.statusCode()));
+                })
                 .bodyToMono(EnactOutput.class);
     }
 
@@ -109,6 +132,9 @@ public class RequestServiceWS {
                 .header("x-dresessionid", sessionId)
                 .body(Mono.just(new DataValueBody(name, value)), DataValueBody.class)
                 .retrieve()
+                .onStatus(HttpStatus::isError, response -> {
+                    return Mono.error(new IllegalStateException("putDataValue failed with error code: " + response.statusCode()));
+                })
                 .bodyToMono(DataValueOutput.class);
     }
 
@@ -118,6 +144,9 @@ public class RequestServiceWS {
                 .header("x-dresessionid", sessionId)
                 .body(Mono.just(new ConfirmTaskBody(name)), ConfirmTaskBody.class)
                 .retrieve()
+                .onStatus(HttpStatus::isError, response -> {
+                    return Mono.error(new IllegalStateException("putConfirmTask failed with error code: " + response.statusCode()));
+                })
                 .bodyToMono(ConfirmTaskOutput.class);
     }
 
@@ -130,6 +159,9 @@ public class RequestServiceWS {
                                 .build())
                 .header("x-dresessionid", sessionId)
                 .retrieve()
+                .onStatus(HttpStatus::isError, response -> {
+                    return Mono.error(new IllegalStateException("putEnactmentDelete failed with error code: " + response.statusCode()));
+                })
                 .bodyToMono(EnactmentDeleteOutput.class);
     }
 
