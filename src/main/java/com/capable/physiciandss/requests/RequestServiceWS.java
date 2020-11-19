@@ -7,6 +7,8 @@ import com.capable.physiciandss.model.post.EnactBody;
 import com.capable.physiciandss.model.post.EnactOutput;
 import com.capable.physiciandss.model.put.*;
 import com.capable.physiciandss.utils.Constants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.http.HttpStatus;
@@ -14,19 +16,20 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
-import java.util.logging.Logger;
+
 
 
 @Service
 public class RequestServiceWS {
 
-    private final Logger log = Logger.getLogger(getClass().getName());
+    private final Logger log = LoggerFactory.getLogger(this.getClass().getName());
     WebClient webClient;
 
 
     public RequestServiceWS() {
         ApplicationContext context = new AnnotationConfigApplicationContext(WebClientConfig.class);
         webClient = context.getBean("webClient", WebClient.class);
+        log.info("Utworzono RequestService");
     }
 
     public Mono<Enactment[]> getEnactments() {
@@ -34,7 +37,14 @@ public class RequestServiceWS {
                 .uri(Constants.PRS_API_URL + "/Enactments")
                 .retrieve()
                 .onStatus(HttpStatus::isError, response -> {
-                    return Mono.error(new IllegalStateException("getEnactments failed with error code: " + response.statusCode()));
+                    IllegalStateException ex = new IllegalStateException("getEnactments" + Constants.REQUEST_FAILED_MESSAGE
+                            + response.statusCode());
+                    log.debug(ex.getMessage());
+                    return Mono.error(ex);
+                })
+                .onStatus(HttpStatus::is2xxSuccessful, response -> {
+                    log.info("getEnactments" + Constants.REQUEST_SUCCEDED_MESSAGE);
+                    return Mono.empty();
                 })
                 .bodyToMono(Enactment[].class);
     }
@@ -47,7 +57,14 @@ public class RequestServiceWS {
                         .build())
                 .retrieve()
                 .onStatus(HttpStatus::isError, response -> {
-                    return Mono.error(new IllegalStateException("getPathway failed with error code: " + response.statusCode()));
+                    IllegalStateException ex = new IllegalStateException("getPathway" + Constants.REQUEST_FAILED_MESSAGE
+                            + response.statusCode());
+                    log.debug(ex.getMessage());
+                    return Mono.error(ex);
+                })
+                .onStatus(HttpStatus::is2xxSuccessful, response -> {
+                    log.info("getPathway" + Constants.REQUEST_SUCCEDED_MESSAGE);
+                    return Mono.empty();
                 })
                 .bodyToMono(Pathway[].class);
     }
@@ -62,7 +79,14 @@ public class RequestServiceWS {
                 .header("x-dresessionid", sessionId)
                 .retrieve()
                 .onStatus(HttpStatus::isError, response -> {
-                    return Mono.error(new IllegalStateException("getData failed with error code: " + response.statusCode()));
+                    IllegalStateException ex = new IllegalStateException("getData" + Constants.REQUEST_FAILED_MESSAGE
+                            + response.statusCode());
+                    log.debug(ex.getMessage());
+                    return Mono.error(ex);
+                })
+                .onStatus(HttpStatus::is2xxSuccessful, response -> {
+                    log.info("getData" + Constants.REQUEST_SUCCEDED_MESSAGE);
+                    return Mono.empty();
                 })
                 .bodyToMono(ItemData[].class);
     }
@@ -76,7 +100,14 @@ public class RequestServiceWS {
                                 .build())
                 .retrieve()
                 .onStatus(HttpStatus::isError, response -> {
-                    return Mono.error(new IllegalStateException("getConnect failed with error code: " + response.statusCode()));
+                    IllegalStateException ex = new IllegalStateException("getConnect" + Constants.REQUEST_FAILED_MESSAGE
+                            + response.statusCode());
+                    log.debug(ex.getMessage());
+                    return Mono.error(ex);
+                })
+                .onStatus(HttpStatus::is2xxSuccessful, response -> {
+                    log.info("getConnect" + Constants.REQUEST_SUCCEDED_MESSAGE);
+                    return Mono.empty();
                 })
                 .bodyToMono(Connect.class);
     }
@@ -91,7 +122,14 @@ public class RequestServiceWS {
                 .header("x-dresessionid", sessionId)
                 .retrieve()
                 .onStatus(HttpStatus::isError, response -> {
-                    return Mono.error(new IllegalStateException("getTask failed with error code: " + response.statusCode()));
+                    IllegalStateException ex = new IllegalStateException("getTask" + Constants.REQUEST_FAILED_MESSAGE
+                            + response.statusCode());
+                    log.debug(ex.getMessage());
+                    return Mono.error(ex);
+                })
+                .onStatus(HttpStatus::is2xxSuccessful, response -> {
+                    log.info("getTask" + Constants.REQUEST_SUCCEDED_MESSAGE);
+                    return Mono.empty();
                 })
                 .bodyToMono(PlanTask.class);
     }
@@ -110,7 +148,14 @@ public class RequestServiceWS {
                 .header("x-dresessionid", sessionId)
                 .retrieve()
                 .onStatus(HttpStatus::isError, response -> {
-                    return Mono.error(new IllegalStateException("getPlanTasks failed with error code: " + response.statusCode()));
+                    IllegalStateException ex = new IllegalStateException("getPlanTasks" + Constants.REQUEST_FAILED_MESSAGE
+                            + response.statusCode());
+                    log.debug(ex.getMessage());
+                    return Mono.error(ex);
+                })
+                .onStatus(HttpStatus::is2xxSuccessful, response -> {
+                    log.info("getPlanTasks" + Constants.REQUEST_SUCCEDED_MESSAGE);
+                    return Mono.empty();
                 })
                 .bodyToMono(PlanTask[].class);
     }
@@ -121,7 +166,14 @@ public class RequestServiceWS {
                 .body(Mono.just(new EnactBody(pathwayid, patientid)), EnactBody.class)
                 .retrieve()
                 .onStatus(HttpStatus::isError, response -> {
-                    return Mono.error(new IllegalStateException("postEnact failed with error code: " + response.statusCode()));
+                    IllegalStateException ex = new IllegalStateException("postEnact" + Constants.REQUEST_FAILED_MESSAGE
+                            + response.statusCode());
+                    log.debug(ex.getMessage());
+                    return Mono.error(ex);
+                })
+                .onStatus(HttpStatus::is2xxSuccessful, response -> {
+                    log.info("postEnact" + Constants.REQUEST_SUCCEDED_MESSAGE);
+                    return Mono.empty();
                 })
                 .bodyToMono(EnactOutput.class);
     }
@@ -133,7 +185,14 @@ public class RequestServiceWS {
                 .body(Mono.just(new DataValueBody(name, value)), DataValueBody.class)
                 .retrieve()
                 .onStatus(HttpStatus::isError, response -> {
-                    return Mono.error(new IllegalStateException("putDataValue failed with error code: " + response.statusCode()));
+                    IllegalStateException ex = new IllegalStateException("putDataValue" + Constants.REQUEST_FAILED_MESSAGE
+                            + response.statusCode());
+                    log.debug(ex.getMessage());
+                    return Mono.error(ex);
+                })
+                .onStatus(HttpStatus::is2xxSuccessful, response -> {
+                    log.info("putDataValue" + Constants.REQUEST_SUCCEDED_MESSAGE);
+                    return Mono.empty();
                 })
                 .bodyToMono(DataValueOutput.class);
     }
@@ -145,7 +204,14 @@ public class RequestServiceWS {
                 .body(Mono.just(new ConfirmTaskBody(name)), ConfirmTaskBody.class)
                 .retrieve()
                 .onStatus(HttpStatus::isError, response -> {
-                    return Mono.error(new IllegalStateException("putConfirmTask failed with error code: " + response.statusCode()));
+                    IllegalStateException ex = new IllegalStateException("putConfirmTask" + Constants.REQUEST_FAILED_MESSAGE
+                            + response.statusCode());
+                    log.debug(ex.getMessage());
+                    return Mono.error(ex);
+                })
+                .onStatus(HttpStatus::is2xxSuccessful, response -> {
+                    log.info("putConfirmTask" + Constants.REQUEST_SUCCEDED_MESSAGE);
+                    return Mono.empty();
                 })
                 .bodyToMono(ConfirmTaskOutput.class);
     }
@@ -160,7 +226,14 @@ public class RequestServiceWS {
                 .header("x-dresessionid", sessionId)
                 .retrieve()
                 .onStatus(HttpStatus::isError, response -> {
-                    return Mono.error(new IllegalStateException("putEnactmentDelete failed with error code: " + response.statusCode()));
+                    IllegalStateException ex = new IllegalStateException("putEnactmentDelete" + Constants.REQUEST_FAILED_MESSAGE
+                            + response.statusCode());
+                    log.debug(ex.getMessage());
+                    return Mono.error(ex);
+                })
+                .onStatus(HttpStatus::is2xxSuccessful, response -> {
+                    log.info("putEnactmentDelete" + Constants.REQUEST_SUCCEDED_MESSAGE);
+                    return Mono.empty();
                 })
                 .bodyToMono(EnactmentDeleteOutput.class);
     }

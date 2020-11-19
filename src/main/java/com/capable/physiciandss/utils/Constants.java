@@ -7,4 +7,7 @@ public class Constants {
     public static String DRE_API_URL = "/dreapi";
     public static String PRS_API_URL = "/prsapi";
 
+    public static String REQUEST_SUCCEDED_MESSAGE = " succeded!";
+    public static String REQUEST_FAILED_MESSAGE = " failed with error code: ";
+
 }

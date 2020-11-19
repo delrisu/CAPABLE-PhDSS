@@ -19,7 +19,7 @@ public class PhysiciandssApplication {
         RS.getPathway(false).subscribe(pathways -> {
             System.out.println(Arrays.toString(pathways));
             String pathwayID = pathways[0].getId();
-            RS.postEnact(pathwayID, "0").subscribe(enact -> {
+            RS.postEnact("0", "0").subscribe(enact -> {
                 System.out.println(enact);
                 RS.getConnect(enact.getEnactmentid()).subscribe(connect -> {
                     System.out.println(connect);
@@ -35,22 +35,27 @@ public class PhysiciandssApplication {
                                     for (ItemData d : data
                                     ) {
                                         System.out.println(d);
-                                        RS.putDataValue(d.getName(), "2", connect.getDresessionid()).subscribe(res -> {
-                                            System.out.println("Dodanie data value:" + res.isSuccess());
-                                        }, ex -> System.out.println(ex.getMessage()));
+                                        RS.putDataValue(d.getName(), "2", connect.getDresessionid()).subscribe(res -> System.out.println("Dodanie data value:" + res.isSuccess()), ex -> {
+                                        });
                                     }
 
-                                }, ex -> System.out.println(ex.getMessage()));
+                                }, ex -> {
+                                });
 
-                                RS.putConfirmTask(task.getName(), connect.getDresessionid()).subscribe(ct -> System.out.println(ct.getState()), ex -> System.out.println(ex.getMessage()));
+                                RS.putConfirmTask(task.getName(), connect.getDresessionid()).subscribe(ct -> System.out.println(ct.getState()), ex -> {
+                                });
                             }
 
                         }
                     });
-                    RS.putEnactmentDelete(enact.getEnactmentid(), connect.getDresessionid()).subscribe(st -> System.out.println("Usuniecie enact:" + st.getDeleted()), ex -> System.out.println(ex.getMessage()));
-                }, ex -> System.out.println(ex.getMessage()));
-            }, ex -> System.out.println(ex.getMessage()));
-        }, ex -> System.out.println(ex.getMessage()));
+                    RS.putEnactmentDelete(enact.getEnactmentid(), connect.getDresessionid()).subscribe(st -> System.out.println("Usuniecie enact:" + st.getDeleted()), ex -> {
+                    });
+                }, ex -> {
+                });
+            }, ex -> {
+            });
+        }, ex -> {
+        });
 //        System.out.println(Arrays.toString(enactments));
 //        System.out.println(Arrays.toString(new RequestServiceWS().getPathway()));
 //        Connect connection = new RequestServiceWS().getConnection(enactments[0].getId());
