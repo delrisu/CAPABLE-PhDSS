@@ -31,8 +31,8 @@ public class RequestService {
         log.info("Utworzono RequestService");
     }
 
-    private Mono<? extends Throwable> onError(ClientResponse response, String getEnactments) {
-        IllegalStateException ex = new IllegalStateException(getEnactments + Constants.REQUEST_FAILED_MESSAGE
+    private Mono<? extends Throwable> onError(ClientResponse response, String methodName) {
+        IllegalStateException ex = new IllegalStateException(methodName + Constants.REQUEST_FAILED_MESSAGE
                 + response.statusCode());
         log.debug(ex.getMessage());
         return Mono.error(ex);
