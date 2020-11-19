@@ -19,7 +19,7 @@ public class PhysiciandssApplication {
         RS.getPathway(false).subscribe(pathways -> {
             System.out.println(Arrays.toString(pathways));
             String pathwayID = pathways[0].getId();
-            RS.postEnact("0", "0").subscribe(enact -> {
+            RS.postEnact(pathwayID, "0").subscribe(enact -> {
                 System.out.println(enact);
                 RS.getConnect(enact.getEnactmentid()).subscribe(connect -> {
                     System.out.println(connect);
@@ -42,8 +42,7 @@ public class PhysiciandssApplication {
                                 }, ex -> {
                                 });
 
-                                RS.putConfirmTask(task.getName(), connect.getDresessionid()).subscribe(ct -> System.out.println(ct.getState()), ex -> {
-                                });
+                                //RS.putConfirmTask(task.getName(), connect.getDresessionid()).subscribe(ct -> System.out.println(ct.getState()), ex -> {});
                             }
 
                         }
