@@ -12,7 +12,7 @@ public class WebClientConfig {
     @Bean
     public WebClient webClient() {
         return WebClient.builder()
-                .baseUrl(Constants.BASE_URL)
+                .baseUrl(Constants.DEONTICS_BASE_URL)
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .defaultHeader("x-apikey", Constants.X_APIKEY)
                 .build();
