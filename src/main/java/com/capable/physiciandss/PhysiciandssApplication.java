@@ -9,8 +9,6 @@ public class PhysiciandssApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(PhysiciandssApplication.class, args);
-        HapiRequestService hrs = new HapiRequestService();
-        System.out.println(hrs.getPatientbyId("1").getName().get(0).getGiven().get(0));
     }
 
 }
