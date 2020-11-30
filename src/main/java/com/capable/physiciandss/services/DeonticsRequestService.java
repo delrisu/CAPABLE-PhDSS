@@ -28,7 +28,7 @@ public class DeonticsRequestService {
     public DeonticsRequestService() {
         ApplicationContext context = new AnnotationConfigApplicationContext(WebClientConfig.class);
         webClient = context.getBean("webClient", WebClient.class);
-        log.info("Utworzono RequestService");
+        log.info("DeonticsRequestService has been created");
     }
 
     private Mono<? extends Throwable> onError(ClientResponse response, String methodName) {
