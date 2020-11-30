@@ -4,6 +4,8 @@ import ca.uhn.fhir.rest.client.api.IGenericClient;
 import com.capable.physiciandss.configuration.HapiConnectionConfig;
 import com.capable.physiciandss.hapi.Connection;
 import org.hl7.fhir.r4.model.Bundle;
+import org.hl7.fhir.r4.model.MedicationRequest;
+import org.hl7.fhir.r4.model.Observation;
 import org.hl7.fhir.r4.model.Patient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,9 +23,23 @@ public class HapiRequestService {
         log.info("HapiRequestService has been created.");
     }
 
-    public Patient getPatientbyId(String id){
+    public Patient getPatientById(String id){
         return client.read()
                 .resource(Patient.class)
+                .withId(id)
+                .execute();
+    }
+
+    public Observation getObservationById(String id){
+        return client.read()
+                .resource(Observation.class)
+                .withId(id)
+                .execute();
+    }
+
+    public MedicationRequest getMedicationRequestById(String id){
+        return client.read()
+                .resource(MedicationRequest.class)
                 .withId(id)
                 .execute();
     }
