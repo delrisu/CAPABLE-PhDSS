@@ -1,4 +1,4 @@
-package com.capable.physiciandss.requests;
+package com.capable.physiciandss.services;
 
 
 import com.capable.physiciandss.configuration.WebClientConfig;
@@ -19,13 +19,13 @@ import reactor.core.publisher.Mono;
 
 
 @Service
-public class RequestService {
+public class DeonticsRequestService {
 
     private final Logger log = LoggerFactory.getLogger(this.getClass().getName());
     WebClient webClient;
 
 
-    public RequestService() {
+    public DeonticsRequestService() {
         ApplicationContext context = new AnnotationConfigApplicationContext(WebClientConfig.class);
         webClient = context.getBean("webClient", WebClient.class);
         log.info("Utworzono RequestService");
