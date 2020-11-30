@@ -8,11 +8,11 @@ import lombok.Setter;
 @Getter
 @Setter
 public class Connection {
-    private FhirContext ctx;
+
     private IGenericClient client;
 
     public Connection(String url) {
-        this.ctx = FhirContext.forR4();
+        FhirContext ctx = FhirContext.forR4();
         this.client = ctx.newRestfulGenericClient(url);
     }
 }
