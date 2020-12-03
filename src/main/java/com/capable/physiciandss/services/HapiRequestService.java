@@ -3,10 +3,7 @@ package com.capable.physiciandss.services;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
 import com.capable.physiciandss.configuration.HapiConnectionConfig;
 import com.capable.physiciandss.hapi.Connection;
-import org.hl7.fhir.r4.model.Bundle;
-import org.hl7.fhir.r4.model.MedicationRequest;
-import org.hl7.fhir.r4.model.Observation;
-import org.hl7.fhir.r4.model.Patient;
+import org.hl7.fhir.r4.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
@@ -40,6 +37,13 @@ public class HapiRequestService {
     public MedicationRequest getMedicationRequestById(String id){
         return client.read()
                 .resource(MedicationRequest.class)
+                .withId(id)
+                .execute();
+    }
+
+    public Condition getConditionById(String id){
+        return client.read()
+                .resource(Condition.class)
                 .withId(id)
                 .execute();
     }
