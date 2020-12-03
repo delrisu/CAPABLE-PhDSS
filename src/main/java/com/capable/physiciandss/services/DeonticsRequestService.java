@@ -123,6 +123,21 @@ public class DeonticsRequestService {
                 .bodyToMono(PlanTask[].class);
     }
 
+    public Mono<QueryConfirmTask> getQueryConfirmTask(int runtimeid, String sessionId) {
+        return webClient.get()
+                .uri(
+                        uriBuilder -> uriBuilder
+                                .path(Constants.DRE_API_URL + "/QueryConfirmTask")
+                                .queryParam("runtimeid", runtimeid)
+                                .build())
+                .header("x-dresessionid", sessionId)
+                .retrieve()
+                .onStatus(HttpStatus::isError, response -> onError(response, "getQueryConfirmTask"))
+                .onStatus(HttpStatus::is2xxSuccessful, response -> onSuccess("getQueryConfirmTask"))
+                .bodyToMono(QueryConfirmTask.class);
+    }
+
+
     public Mono<EnactOutput> postEnact(String pathwayid, String patientid) {
         return webClient.post()
                 .uri(Constants.DRE_API_URL + "/Enact")

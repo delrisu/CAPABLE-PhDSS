@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @Data
 public class PlanTask {
     private String name;
-    private long runtimeid;
+    private int runtimeid;
     private String caption;
     private String description;
     private JsonNode metaprops;
