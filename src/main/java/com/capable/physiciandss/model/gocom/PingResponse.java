@@ -7,6 +7,6 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class Ping {
-    String patientId;
+public class PingResponse {
+    int ifResolvedConflict;
 }
