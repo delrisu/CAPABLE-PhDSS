@@ -2,10 +2,10 @@ package com.capable.physiciandss.services;
 
 
 import com.capable.physiciandss.configuration.WebClientConfig;
-import com.capable.physiciandss.model.get.*;
-import com.capable.physiciandss.model.post.EnactBody;
-import com.capable.physiciandss.model.post.EnactOutput;
-import com.capable.physiciandss.model.put.*;
+import com.capable.physiciandss.model.deontics.get.*;
+import com.capable.physiciandss.model.deontics.post.EnactBody;
+import com.capable.physiciandss.model.deontics.post.EnactOutput;
+import com.capable.physiciandss.model.deontics.put.*;
 import com.capable.physiciandss.utils.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

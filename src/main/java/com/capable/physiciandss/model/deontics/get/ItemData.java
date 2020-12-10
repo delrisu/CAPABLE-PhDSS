@@ -1,4 +1,4 @@
-package com.capable.physiciandss.model.get;
+package com.capable.physiciandss.model.deontics.get;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.AllArgsConstructor;
