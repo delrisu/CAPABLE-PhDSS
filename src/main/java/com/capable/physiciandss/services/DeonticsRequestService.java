@@ -2,45 +2,31 @@ package com.capable.physiciandss.services;
 
 
 import com.capable.physiciandss.configuration.WebClientConfig;
-import com.capable.physiciandss.model.get.*;
-import com.capable.physiciandss.model.post.EnactBody;
-import com.capable.physiciandss.model.post.EnactOutput;
-import com.capable.physiciandss.model.put.*;
+import com.capable.physiciandss.model.deontics.get.*;
+import com.capable.physiciandss.model.deontics.post.EnactBody;
+import com.capable.physiciandss.model.deontics.post.EnactOutput;
+import com.capable.physiciandss.model.deontics.put.*;
 import com.capable.physiciandss.utils.Constants;
-import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 
 @Service
-public class DeonticsRequestService {
+public class DeonticsRequestService extends RootService {
 
-    private final Logger log = LoggerFactory.getLogger(this.getClass().getName());
     WebClient webClient;
 
 
     public DeonticsRequestService() {
+        log = LoggerFactory.getLogger(this.getClass().getName());
         ApplicationContext context = new AnnotationConfigApplicationContext(WebClientConfig.class);
         webClient = context.getBean("webClient", WebClient.class);
         log.info("DeonticsRequestService has been created");
-    }
-
-    private Mono<? extends Throwable> onError(ClientResponse response, String methodName) {
-        IllegalStateException ex = new IllegalStateException(methodName + Constants.REQUEST_FAILED_MESSAGE
-                + response.statusCode());
-        log.debug(ex.getMessage());
-        return Mono.error(ex);
-    }
-
-    private Mono<? extends Throwable> onSuccess(String postEnact) {
-        log.info(postEnact + Constants.REQUEST_SUCCEDED_MESSAGE);
-        return Mono.empty();
     }
 
     public Mono<Enactment[]> getEnactments() {
