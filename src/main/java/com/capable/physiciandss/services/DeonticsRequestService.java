@@ -52,6 +52,18 @@ public class DeonticsRequestService {
                 .bodyToMono(Enactment[].class);
     }
 
+    public Mono<Enactment[]> getEnactmentsByPatientId(String patientId) {
+        return webClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path(Constants.PRS_API_URL + "/EnactmentsExtended")
+                        .queryParam("groupid", patientId)
+                        .build())
+                .retrieve()
+                .onStatus(HttpStatus::isError, response -> onError(response, "getEnactments"))
+                .onStatus(HttpStatus::is2xxSuccessful, response -> onSuccess("getEnactments"))
+                .bodyToMono(Enactment[].class);
+    }
+
     public Mono<Pathway[]> getPathway(boolean temp) {
         return webClient.get()
                 .uri(uriBuilder -> uriBuilder
