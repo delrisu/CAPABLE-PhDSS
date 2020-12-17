@@ -10,9 +10,10 @@ import lombok.Setter;
 public class Connection {
 
     private IGenericClient client;
+    private FhirContext ctx;
 
     public Connection(String url) {
-        FhirContext ctx = FhirContext.forR4();
+        this.ctx = FhirContext.forR4();
         this.client = ctx.newRestfulGenericClient(url);
     }
 }
