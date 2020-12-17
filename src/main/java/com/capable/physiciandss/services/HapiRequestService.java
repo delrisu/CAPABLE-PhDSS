@@ -89,15 +89,16 @@ public class HapiRequestService {
         return medicationRequests;
     }
 
-    public List<Communication> getCommunicationListByStatus(String status){
+    public List<Communication> getCommunicationListByStatus(Communication.CommunicationStatus status){
         Bundle bundle = client
                 .search()
                 .forResource(Communication.class)
-                .where(Communication.STATUS.exactly().code(status))
+                .where(Communication.STATUS.exactly().code(status.toCode()))
                 .returnBundle(Bundle.class)
                 .execute();
 
-        List<Communication> communications = new ArrayList<>(BundleUtil.toListOfResourcesOfType(ctx, bundle, Communication.class));
+        List<Communication> communications =
+                new ArrayList<>(BundleUtil.toListOfResourcesOfType(ctx, bundle, Communication.class));
         while (bundle.getLink(IBaseBundle.LINK_NEXT) != null) {
             bundle = client
                     .loadPage()
