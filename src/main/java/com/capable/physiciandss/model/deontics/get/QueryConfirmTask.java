@@ -1,4 +1,4 @@
-package com.capable.physiciandss.model.get;
+package com.capable.physiciandss.model.deontics.get;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -7,8 +7,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class Cause {
-    String message;
-    Component component;
+public class QueryConfirmTask {
+    Precondition precondition;
     Cause[] causes;
+
 }
