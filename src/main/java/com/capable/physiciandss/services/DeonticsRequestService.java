@@ -62,6 +62,18 @@ public class DeonticsRequestService extends RootService {
                 .bodyToMono(Pathway[].class);
     }
 
+    public Mono<Pathway[]> getPathwayByName(String name) {
+        return webClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path(Constants.PRS_API_URL + "/Pathways")
+                        .queryParam("name", name)
+                        .build())
+                .retrieve()
+                .onStatus(HttpStatus::isError, response -> onError(response, "getPathway"))
+                .onStatus(HttpStatus::is2xxSuccessful, response -> onSuccess("getPathway"))
+                .bodyToMono(Pathway[].class);
+    }
+
     public Mono<ItemData[]> getData(String enquiryName, String sessionId) {
         return webClient.get()
                 .uri(uriBuilder -> uriBuilder
