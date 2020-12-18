@@ -45,8 +45,20 @@ public class DeonticsRequestService extends RootService {
                         .queryParam("groupid", patientId)
                         .build())
                 .retrieve()
-                .onStatus(HttpStatus::isError, response -> onError(response, "getEnactments"))
-                .onStatus(HttpStatus::is2xxSuccessful, response -> onSuccess("getEnactments"))
+                .onStatus(HttpStatus::isError, response -> onError(response, "getEnactmentsByPatientId"))
+                .onStatus(HttpStatus::is2xxSuccessful, response -> onSuccess("getEnactmentsByPatientId"))
+                .bodyToMono(Enactment[].class);
+    }
+
+    public Mono<Enactment[]> getEnactmentsByEnactmentId(String enactmentId) {
+        return webClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path(Constants.PRS_API_URL + "/EnactmentsExtended")
+                        .queryParam("id", enactmentId)
+                        .build())
+                .retrieve()
+                .onStatus(HttpStatus::isError, response -> onError(response, "getEnactmentsByEnactmentId"))
+                .onStatus(HttpStatus::is2xxSuccessful, response -> onSuccess("getEnactmentsByEnactmentId"))
                 .bodyToMono(Enactment[].class);
     }
 
@@ -69,8 +81,8 @@ public class DeonticsRequestService extends RootService {
                         .queryParam("name", name)
                         .build())
                 .retrieve()
-                .onStatus(HttpStatus::isError, response -> onError(response, "getPathway"))
-                .onStatus(HttpStatus::is2xxSuccessful, response -> onSuccess("getPathway"))
+                .onStatus(HttpStatus::isError, response -> onError(response, "getPathwayByName"))
+                .onStatus(HttpStatus::is2xxSuccessful, response -> onSuccess("getPathwayByName"))
                 .bodyToMono(Pathway[].class);
     }
 
