@@ -145,7 +145,7 @@ public class DeonticsRequestService extends RootService {
                 .bodyToMono(PlanTask[].class);
     }
 
-    public Mono<QueryConfirmTask> getQueryConfirmTask(int taskName, String sessionId) {
+    public Mono<QueryConfirmTask> getQueryConfirmTask(String taskName, String sessionId) {
         return webClient.get()
                 .uri(
                         uriBuilder -> uriBuilder
