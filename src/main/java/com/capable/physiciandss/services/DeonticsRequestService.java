@@ -145,12 +145,12 @@ public class DeonticsRequestService extends RootService {
                 .bodyToMono(PlanTask[].class);
     }
 
-    public Mono<QueryConfirmTask> getQueryConfirmTask(int runtimeid, String sessionId) {
+    public Mono<QueryConfirmTask> getQueryConfirmTask(int taskName, String sessionId) {
         return webClient.get()
                 .uri(
                         uriBuilder -> uriBuilder
                                 .path(Constants.DRE_API_URL + "/QueryConfirmTask")
-                                .queryParam("runtimeid", runtimeid)
+                                .queryParam("name", taskName)
                                 .build())
                 .header("x-dresessionid", sessionId)
                 .retrieve()
