@@ -59,6 +59,10 @@ public class HapiRequestService {
                 .where(Observation.SUBJECT.hasId(id))
                 .returnBundle(Bundle.class)
                 .execute();
+        return getObservations(bundle);
+    }
+
+    private List<Observation> getObservations(Bundle bundle) {
         List<Observation> observations =
                 new ArrayList<>(BundleUtil.toListOfResourcesOfType(ctx, bundle, Observation.class));
         while (bundle.getLink(IBaseBundle.LINK_NEXT) != null) {
@@ -79,19 +83,10 @@ public class HapiRequestService {
                 .and(Observation.CODE.exactly().systemAndCode(system, ontologyCoding))
                 .returnBundle(Bundle.class)
                 .execute();
-        List<Observation> observations =
-                new ArrayList<>(BundleUtil.toListOfResourcesOfType(ctx, bundle, Observation.class));
-        while (bundle.getLink(IBaseBundle.LINK_NEXT) != null) {
-            bundle = client
-                    .loadPage()
-                    .next(bundle)
-                    .execute();
-            observations.addAll(BundleUtil.toListOfResourcesOfType(ctx, bundle, Observation.class));
-        }
-        return observations;
+        return getObservations(bundle);
     }
 
-    public MedicationRequest getMedicationRequestById(String id) {
+    public MedicationRequest getMedicationRequest(String id) {
         return client.read()
                 .resource(MedicationRequest.class)
                 .withId(id)
@@ -105,6 +100,10 @@ public class HapiRequestService {
                 .where(MedicationRequest.SUBJECT.hasId(id))
                 .returnBundle(Bundle.class)
                 .execute();
+        return getMedicationRequests(bundle);
+    }
+
+    private List<MedicationRequest> getMedicationRequests(Bundle bundle) {
         List<MedicationRequest> medicationRequests =
                 new ArrayList<>(BundleUtil.toListOfResourcesOfType(ctx, bundle, MedicationRequest.class));
         while (bundle.getLink(IBaseBundle.LINK_NEXT) != null) {
@@ -126,16 +125,7 @@ public class HapiRequestService {
                 .and(MedicationRequest.STATUS.exactly().code(status.toCode()))
                 .returnBundle(Bundle.class)
                 .execute();
-        List<MedicationRequest> medicationRequests =
-                new ArrayList<>(BundleUtil.toListOfResourcesOfType(ctx, bundle, MedicationRequest.class));
-        while (bundle.getLink(IBaseBundle.LINK_NEXT) != null) {
-            bundle = client
-                    .loadPage()
-                    .next(bundle)
-                    .execute();
-            medicationRequests.addAll(BundleUtil.toListOfResourcesOfType(ctx, bundle, MedicationRequest.class));
-        }
-        return medicationRequests;
+        return getMedicationRequests(bundle);
     }
 
     public List<Communication> getCommunicationList(Communication.CommunicationStatus status) {
