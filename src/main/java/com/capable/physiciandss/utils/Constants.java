@@ -14,4 +14,14 @@ public class Constants {
     public static final String REQUEST_SUCCEDED_MESSAGE = " succeded!";
     public static final String REQUEST_FAILED_MESSAGE = " failed with error code: ";
 
+    public static final String SCHEDULER_TASK_INFO = "Checking if there is any data to process";
+    public static final String SCHEDULER_TASK_BAD_PAYLOAD_TYPE = "Wrong payload type";
+    public static final String SCHEDULER_TASK_BAD_DEONTIC_TASKS_TYPE = "Wrong deontic task's type";
+
+    public static final String DEONTICS_IN_PROGRESS_STATUS = "in_progress";
+    public static final String DEONTICS_ENQUIRY_TASK_TYPE = "enquiry";
+    public static final String DEONTICS_ACTION_TASK_TYPE = "action";
+
+    public static final String META_GUIDELINE_NAME = "project_ph_meta_guideline";
+    public static final String META_GUIDELINE_MISSING_INFO = "Meta guideline is missing";
 }
