@@ -145,6 +145,24 @@ public class DeonticsRequestService extends RootService {
                 .bodyToMono(PlanTask[].class);
     }
 
+    public Mono<PlanTask[]> getPlanTasksUnderTask(String state, String taskName, String sessionId) {
+        return webClient.get()
+                .uri(
+                        uriBuilder -> uriBuilder
+                                .path(Constants.DRE_API_URL + "/PlanTasks")
+                                .queryParam("state", state)
+                                .queryParam("name", taskName)
+                                .queryParam("recursive", "true")
+                                .queryParam("flat", "true")
+                                .queryParam("metaprops", "true")
+                                .build())
+                .header("x-dresessionid", sessionId)
+                .retrieve()
+                .onStatus(HttpStatus::isError, response -> onError(response, "getPlanTasks"))
+                .onStatus(HttpStatus::is2xxSuccessful, response -> onSuccess("getPlanTasks"))
+                .bodyToMono(PlanTask[].class);
+    }
+
     public Mono<QueryConfirmTask> getQueryConfirmTask(String taskName, String sessionId) {
         return webClient.get()
                 .uri(
