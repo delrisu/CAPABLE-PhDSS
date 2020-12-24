@@ -32,6 +32,7 @@ public class HapiRequestService {
     }
 
     public Patient getPatient(String id) {
+        log.info("Reading patient with id: " + id);
         return client.read()
                 .resource(Patient.class)
                 .withId(id)
@@ -39,6 +40,7 @@ public class HapiRequestService {
     }
 
     public Observation getObservation(String id) {
+        log.info("Reading observation with id: " + id);
         return client.read()
                 .resource(Observation.class)
                 .withId(id)
@@ -46,17 +48,31 @@ public class HapiRequestService {
     }
 
     public Communication getCommunication(String id) {
+        log.info("Reading communication with id: " + id);
         return client.read()
                 .resource(Communication.class)
                 .withId(id)
                 .execute();
     }
 
-    public List<Observation> getObservationList(String id) {
+    public List<Observation> getObservationList(String subjectId) {
+        log.info("Getting list of observation for subject with id: " + subjectId);
         Bundle bundle = client
                 .search()
                 .forResource(Observation.class)
-                .where(Observation.SUBJECT.hasId(id))
+                .where(Observation.SUBJECT.hasId(subjectId))
+                .returnBundle(Bundle.class)
+                .execute();
+        return getObservations(bundle);
+    }
+
+    public List<Observation> getObservationList(String subjectId, String system, String ontologyCoding) {
+        log.info("Getting list of observations with system:" + system + ", ontologyCoding: " + ontologyCoding + " for subject with id: " + subjectId);
+        Bundle bundle = client
+                .search()
+                .forResource(Observation.class)
+                .where(Observation.SUBJECT.hasId(subjectId))
+                .and(Observation.CODE.exactly().systemAndCode(system, ontologyCoding))
                 .returnBundle(Bundle.class)
                 .execute();
         return getObservations(bundle);
@@ -75,29 +91,35 @@ public class HapiRequestService {
         return observations;
     }
 
-    public List<Observation> getObservationList(String id, String system, String ontologyCoding) {
-        Bundle bundle = client
-                .search()
-                .forResource(Observation.class)
-                .where(Observation.SUBJECT.hasId(id))
-                .and(Observation.CODE.exactly().systemAndCode(system, ontologyCoding))
-                .returnBundle(Bundle.class)
-                .execute();
-        return getObservations(bundle);
-    }
-
     public MedicationRequest getMedicationRequest(String id) {
+        log.info("Reading medicationRequest with id: " + id);
         return client.read()
                 .resource(MedicationRequest.class)
                 .withId(id)
                 .execute();
     }
 
-    public List<MedicationRequest> getMedicationRequestList(String id) {
+    public List<MedicationRequest> getMedicationRequestList(String subjectId) {
+        log.info("Getting list of medicationRequests for subject with id: " + subjectId);
         Bundle bundle = client
                 .search()
                 .forResource(MedicationRequest.class)
-                .where(MedicationRequest.SUBJECT.hasId(id))
+                .where(MedicationRequest.SUBJECT.hasId(subjectId))
+                .returnBundle(Bundle.class)
+                .execute();
+        return getMedicationRequests(bundle);
+    }
+
+    public List<MedicationRequest> getMedicationRequestList(String subjectId, String system, String ontologyCoding,
+                                                            MedicationRequest.MedicationRequestStatus status) {
+        log.info("Getting list of medicationRequests with system:" + system + ", ontologyCoding: " + ontologyCoding +
+                ", status: " + status.toCode() + " for subject with id: " + subjectId);
+        Bundle bundle = client
+                .search()
+                .forResource(MedicationRequest.class)
+                .where(MedicationRequest.SUBJECT.hasId(subjectId))
+                .and(MedicationRequest.CODE.exactly().systemAndCode(system, ontologyCoding))
+                .and(MedicationRequest.STATUS.exactly().code(status.toCode()))
                 .returnBundle(Bundle.class)
                 .execute();
         return getMedicationRequests(bundle);
@@ -116,19 +138,8 @@ public class HapiRequestService {
         return medicationRequests;
     }
 
-    public List<MedicationRequest> getMedicationRequestList(String id, String system, String ontologyCoding, MedicationRequest.MedicationRequestStatus status) {
-        Bundle bundle = client
-                .search()
-                .forResource(MedicationRequest.class)
-                .where(MedicationRequest.SUBJECT.hasId(id))
-                .and(MedicationRequest.CODE.exactly().systemAndCode(system, ontologyCoding))
-                .and(MedicationRequest.STATUS.exactly().code(status.toCode()))
-                .returnBundle(Bundle.class)
-                .execute();
-        return getMedicationRequests(bundle);
-    }
-
     public List<Communication> getCommunicationList(Communication.CommunicationStatus status) {
+        log.info("Getting list of communications with status: " + status.toCode());
         Bundle bundle = client
                 .search()
                 .forResource(Communication.class)
@@ -149,6 +160,8 @@ public class HapiRequestService {
     }
 
     public String createObservation(String system, String ontologyCoding, Observation.ObservationStatus status) {
+        log.info("Creating observation with system: " + system + ", ontologyCoding: " +
+                ontologyCoding +" with status: " + status.toCode());
         Observation observation = new Observation();
         CodeableConcept codeableConcept = new CodeableConcept();
         Coding coding = new Coding();
@@ -171,6 +184,7 @@ public class HapiRequestService {
                                         MedicationRequest.MedicationRequestStatus status,
                                         MedicationRequest.MedicationRequestIntent medicationRequestIntent,
                                         String patientId) {
+        log.info("Posting medicationRequest");
         medicationRequest.setStatus(status);
         medicationRequest.setIntent(medicationRequestIntent);
         Reference reference = new Reference(patientId);
@@ -186,6 +200,7 @@ public class HapiRequestService {
     }
 
     public String createCommunication(Communication.CommunicationStatus status, String referenceId) {
+        log.info("Creating communication with status: " + status.toCode() + ", referenceId: " + referenceId);
         Communication communication = new Communication();
         communication.setStatus(status);
         Reference reference = new Reference(referenceId);
@@ -205,6 +220,7 @@ public class HapiRequestService {
     }
 
     public void updateCommunication(Communication communication, Communication.CommunicationStatus status) {
+        log.info("Updating communication status");
         communication.setStatus(status);
 
         MethodOutcome outcome = client.update().resource(communication).execute();
