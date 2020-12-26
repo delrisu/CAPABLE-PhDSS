@@ -24,4 +24,6 @@ public class Constants {
 
     public static final String META_GUIDELINE_NAME = "project_ph_meta_guideline";
     public static final String META_GUIDELINE_MISSING_INFO = "Meta guideline is missing";
+
+    public static final String SNOMED_CODING = "http://snomed.info";
 }

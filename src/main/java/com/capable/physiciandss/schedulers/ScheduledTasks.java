@@ -7,6 +7,7 @@ import com.capable.physiciandss.services.DeonticsRequestService;
 import com.capable.physiciandss.services.HapiRequestService;
 import com.capable.physiciandss.utils.Constants;
 import com.capable.physiciandss.utils.OntologyCodingHandling;
+import com.capable.physiciandss.utils.ReferenceHandling;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -193,14 +194,6 @@ public class ScheduledTasks {
             if (!metaproperties.findValue("ontology.coding").isNull()) {
                 String ontologyCoding = metaproperties.get("ontology.coding").asText();
                 OntologyCodingHandling ontologyCodingHandling = new OntologyCodingHandling(ontologyCoding);
-                /*TODO dodać ściąganie wszystkich tasków ze statusem request
-                Sprawdzanie czy for.getReference() = patientId
-                Sprawdzenie czy zasób pod focus.getReference() to jest Observation i czy ma odpowiedni Code i Status
-                Jeśli tak to jak był intent proposal request to nic nie robimy, a jak order to ściągamy z observation input
-                i ustawiamy status taska na aaccepted
-                i wklepujemy go w deontics
-                * */
-                //Jeśli nie było observation
                 Coding coding = new Coding();
                 coding.setCode(ontologyCodingHandling.getCode());
                 coding.setSystem(ontologyCodingHandling.getSystem());
@@ -214,9 +207,12 @@ public class ScheduledTasks {
                     if (t.getFor().getReference().equals(patientId)) {
                         if (t.getFocus().getType().equals("Observation")) {
                             Observation observation = hapiRequestService.getObservation(t.getFocus().getReference());
-                            if (observation.getCode().getCodingFirstRep().equalsDeep(coding)) {
+                            if (observation.getCode().getCodingFirstRep().getCode().equals(coding.getCode())
+                                    && observation.getCode().getCodingFirstRep().getSystem().equals(coding.getSystem())) {
+                                log.debug("Task with given code already exist");
                                 ifTaskAlreadyExists = true;
-                                if (t.getIntent().equals(Task.TaskIntent.ORDER)) {
+                                if (observation.getStatus().equals(Observation.ObservationStatus.REGISTERED)) {
+                                    log.debug("Observation affiliated with task has been filled");
                                     //hapiRequestService.putTask(Task.TaskStatus.COMPLETED);
                                     tryToFinishTask(enactmentId, task, dresessionId, patientId);
                                 }
@@ -226,23 +222,17 @@ public class ScheduledTasks {
                     }
                 }
                 if (!ifTaskAlreadyExists) {
+                    log.debug("Task with given code doesnt exist");
                     Observation observation = new Observation();
                     observation.setCode(new CodeableConcept().setCoding(codings));
-                    observation.setStatus(Observation.ObservationStatus.REGISTERED);
-                    String ObservationId = null;//hapiRequestService.postObservation(Observation);
+                    observation.setStatus(Observation.ObservationStatus.PRELIMINARY);
+                    String observationId = null;//hapiRequestService.postObservation(Observation);
                     Task newTask = new Task();
-                    newTask.setIntent(Task.TaskIntent.PROPOSAL);
                     newTask.setStatus(Task.TaskStatus.REQUESTED);
-                    Reference patientReference = new Reference(patientId);
-                    patientReference.setType(patientId.split("/")[0]);
-                    patientReference.setId(patientId.split("/")[1]);
-                    newTask.setFor(patientReference);
-                    Reference medicationRequestReference = new Reference(ObservationId);
-                    medicationRequestReference.setType(ObservationId.split("/")[0]);
-                    medicationRequestReference.setId(ObservationId.split("/")[1]);
-                    newTask.setFocus(medicationRequestReference);
+                    newTask.setFor(new ReferenceHandling(patientId).getReference());
+                    newTask.setFocus(new ReferenceHandling(observationId).getReference());
                     String taskId = null;//hapiRequestService.createTask(newTask);
-                    hapiRequestService.createCommunication(Communication.CommunicationStatus.PREPARATION, taskId);
+                    hapiRequestService.createCommunication(Communication.CommunicationStatus.PREPARATION, observationId);
                     log.debug("Put communication resource with reference at medication request in HAPI FHIR");
                 }
             } else {
@@ -256,9 +246,115 @@ public class ScheduledTasks {
 
 
     private void handleAbstractedData(String enactmentId, PlanTask task, ItemData itemData, String dresessionId, String patientId) {
-        //TODO MockKDOM
+        JsonNode metaproperties = itemData.getMetaprops();
+        if (!metaproperties.findValue("ontology.coding").isNull()) {
+            String ontologyCoding = metaproperties.get("ontology.coding").asText();
+            OntologyCodingHandling codingHandling = new OntologyCodingHandling(ontologyCoding);
+            String itemDataValue = "0";
+            Coding sunitib = new Coding();
+            Coding nivolumab = new Coding();
+            Coding diarrhea = new Coding();
+            Coding strongDiarrhea = new Coding();
+            sunitib.setCode("421192001");
+            nivolumab.setCode("704191007");
+            diarrhea.setCode("386661006");
+            strongDiarrhea.setCode("62315008");
+            DateTimeType yesterdayDate = new DateTimeType(new Date());
+            yesterdayDate.add(5, -1);
+            DateTimeType twoDaysAgo = new DateTimeType(new Date());
+            twoDaysAgo.add(5, -2);
+            DateTimeType threeDaysAgo = new DateTimeType(new Date());
+            threeDaysAgo.add(5, -3);
+            switch (codingHandling.getSystem()) {
+                case "SCT":
+                    switch (codingHandling.getCode()) {
+                        case "64644003":
+                            handleOnimmunotherapy(enactmentId, task, itemData, dresessionId, patientId, itemDataValue, sunitib, nivolumab);
+                            break;
+                        case "409587002":
+                            handleComplicatedDiarrhea(enactmentId, task, itemData, dresessionId, patientId, itemDataValue, diarrhea, strongDiarrhea, yesterdayDate);
+                            break;
+                        case "236071009":
+                            handlePersistentDiarrhea(itemData, dresessionId, patientId, itemDataValue, diarrhea, yesterdayDate, twoDaysAgo, threeDaysAgo);
+                            tryToFinishTask(enactmentId, task, dresessionId, patientId);
+                            break;
+                        default:
+                            log.debug("Unknown code value");
+                            break;
+                    }
+                default:
+                    log.debug("Unknown coding system");
+                    break;
+            }
+        } else {
+            log.debug("Missing ontology.coding in metaproperties");
+        }
+    }
 
+    private void handlePersistentDiarrhea(ItemData itemData, String dresessionId, String patientId, String itemDataValue, Coding diarrhea, DateTimeType yesterdayDate, DateTimeType twoDaysAgo, DateTimeType threeDaysAgo) {
+        boolean ifCurrentDay = false;
+        boolean ifYesterday = false;
+        boolean ifTwoDaysAgo = false;
+        ArrayList<Observation> observationList = (ArrayList<Observation>) hapiRequestService.getObservationList(patientId);
+        for (Observation observation : observationList) {
+            Coding observationCoding = observation.getCode().getCodingFirstRep();
+            if (!ifCurrentDay && observation.getEffectiveDateTimeType().after(yesterdayDate)) {
+                if (observationCoding.getSystem().equals(SNOMED_CODING) &&
+                        observationCoding.getCode().equals(diarrhea.getCode())) {
+                    ifCurrentDay = true;
+                }
+            } else if (!ifYesterday
+                    && observation.getEffectiveDateTimeType().before(yesterdayDate)
+                    && observation.getEffectiveDateTimeType().after(twoDaysAgo)) {
+                if (observationCoding.getSystem().equals(SNOMED_CODING) &&
+                        observationCoding.getCode().equals(diarrhea.getCode())) {
+                    ifYesterday = true;
+                }
+            } else if (!ifTwoDaysAgo
+                    && observation.getEffectiveDateTimeType().before(twoDaysAgo)
+                    && observation.getEffectiveDateTimeType().after(threeDaysAgo)) {
+                if (observationCoding.getSystem().equals(SNOMED_CODING) &&
+                        observationCoding.getCode().equals(diarrhea.getCode())) {
+                    ifTwoDaysAgo = true;
+                }
+            }
+            if (ifCurrentDay && ifTwoDaysAgo && ifYesterday) {
+                itemDataValue = "1";
+                break;
+            }
+        }
+        deonticsRequestService.putDataValue(itemData.getName(), itemDataValue, dresessionId);
+    }
 
+    private void handleComplicatedDiarrhea(String enactmentId, PlanTask task, ItemData itemData, String dresessionId, String patientId, String itemDataValue, Coding diarrhea, Coding strongDiarrhea, DateTimeType yesterdayDate) {
+        ArrayList<Observation> observations = (ArrayList<Observation>) hapiRequestService.getObservationList(patientId);
+        for (Observation observation : observations) {
+            Coding observationCoding = observation.getCode().getCodingFirstRep();
+            if (observation.getEffectiveDateTimeType().after(yesterdayDate)) {
+                if (observationCoding.getSystem().equals(SNOMED_CODING) &&
+                        (observationCoding.getCode().equals(strongDiarrhea.getCode())
+                                || observationCoding.getCode().equals(diarrhea.getCode()))) {
+                    itemDataValue = "1";
+                }
+            }
+        }
+        deonticsRequestService.putDataValue(itemData.getName(), itemDataValue, dresessionId);
+        tryToFinishTask(enactmentId, task, dresessionId, patientId);
+    }
+
+    private void handleOnimmunotherapy(String enactmentId, PlanTask task, ItemData itemData, String dresessionId, String patientId, String itemDataValue, Coding sunitib, Coding nivolumab) {
+        ArrayList<MedicationRequest> medicationRequests = (ArrayList<MedicationRequest>) hapiRequestService.getMedicationRequestList(patientId);
+        for (MedicationRequest medicationRequest : medicationRequests) {
+            Coding mrCoding = medicationRequest.getCategoryFirstRep().getCodingFirstRep();
+            if (mrCoding.getSystem().equals(sunitib.getSystem()) && mrCoding.getCode().equals(sunitib.getCode())) {
+                itemDataValue = "1";
+                break;
+            } else if (mrCoding.getSystem().equals(nivolumab.getSystem()) && mrCoding.getCode().equals(nivolumab.getCode())) {
+                itemDataValue = "1";
+                break;
+            }
+        }
+        deonticsRequestService.putDataValue(itemData.getName(), itemDataValue, dresessionId);
         tryToFinishTask(enactmentId, task, dresessionId, patientId);
     }
 
@@ -267,7 +363,7 @@ public class ScheduledTasks {
         JsonNode metaproperties = itemData.getMetaprops();
         if (!metaproperties.findValue("resourceType").isNull()) {
             if (!metaproperties.findValue("ontology.coding").isNull()) {
-                String ontologyCoding = metaproperties.get("coding").asText();
+                String ontologyCoding = metaproperties.get("ontology.coding").asText();
                 OntologyCodingHandling codingHandling = new OntologyCodingHandling(ontologyCoding);
                 switch (metaproperties.get("resourceType").asText()) {
                     case "Observation":
@@ -362,21 +458,17 @@ public class ScheduledTasks {
                                     readValue(
                                             metaproperties.get("resource").asText(), MedicationRequest.class
                                     );
-                            /*TODO dodać ściąganie wszystkich tasków ze statusem request
-                            Sprawdzanie czy for.getReference() = patientId
-                            Sprawdzenie czy zasób pod focus.getReference() to jest MedicationRequest i czy ma odpowiedni Code i Status
-                            Jeśli tak to jak: był intent taska proposal to nic nie robimy, a jak order to robimy confirm task i przestawiamy flage taska na accepted
-                            * */
                             boolean ifTaskAlreadyExists = false;
                             ArrayList<Task> tasks = null;//hapiRequestService.getTasks(Task.TaskStatus.REQUESTED);
                             for (Task t : tasks) {
                                 if (t.getFor().getReference().equals(patientId)) {
-                                    if (t.getFocus().getType() == "MedicationRequest") {
-                                        //TODO medicationRequestByID
-                                        MedicationRequest mR = null;//hapiRequestService.getMedicationRequestList(t.getFocus().getReference());
+                                    if (t.getFocus().getType().equals("MedicationRequest")) {
+                                        MedicationRequest mR = hapiRequestService.getMedicationRequestById(t.getFocus().getReference());
                                         if (mR.getCategory().equals(medicationRequest.getCategory())) {
+                                            log.debug("Task with given code already exist");
                                             ifTaskAlreadyExists = true;
-                                            if (t.getIntent().equals(Task.TaskIntent.ORDER)) {
+                                            if (mR.getStatus().equals(MedicationRequest.MedicationRequestStatus.ACTIVE)) {
+                                                log.debug("Medication request affiliated with task has been activated");
                                                 //hapiRequestService.putTask(Task.TaskStatus.COMPLETED);
                                                 tryToFinishTask(enactmentId, task, dresessionId, patientId);
                                             }
@@ -386,20 +478,14 @@ public class ScheduledTasks {
                                 }
                             }
                             if (!ifTaskAlreadyExists) {
+                                log.debug("Task with given code doesnt exist");
                                 String medicationRequestId = hapiRequestService.postMedicationRequest(medicationRequest, MedicationRequest.MedicationRequestStatus.DRAFT, MedicationRequest.MedicationRequestIntent.PROPOSAL, patientId);
                                 Task newTask = new Task();
-                                newTask.setIntent(Task.TaskIntent.PROPOSAL);
                                 newTask.setStatus(Task.TaskStatus.REQUESTED);
-                                Reference patientReference = new Reference(patientId);
-                                patientReference.setType(patientId.split("/")[0]);
-                                patientReference.setId(patientId.split("/")[1]);
-                                newTask.setFor(patientReference);
-                                Reference medicationRequestReference = new Reference(medicationRequestId);
-                                medicationRequestReference.setType(medicationRequestId.split("/")[0]);
-                                medicationRequestReference.setId(medicationRequestId.split("/")[1]);
-                                newTask.setFocus(medicationRequestReference);
+                                newTask.setFor(new ReferenceHandling(patientId).getReference());
+                                newTask.setFocus(new ReferenceHandling(medicationRequestId).getReference());
                                 String taskId = null;//hapiRequestService.createTask(newTask);
-                                hapiRequestService.createCommunication(Communication.CommunicationStatus.PREPARATION, taskId);
+                                hapiRequestService.createCommunication(Communication.CommunicationStatus.PREPARATION, medicationRequestId);
                                 log.debug("Put communication resource with reference at medication request in HAPI FHIR");
                             }
 
