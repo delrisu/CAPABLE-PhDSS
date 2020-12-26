@@ -211,15 +211,18 @@ public class ScheduledTasks {
                 boolean ifTaskAlreadyExists = false;
                 ArrayList<Task> tasks = null;//hapiRequestService.getTasks(Task.TaskStatus.REQUESTED);
                 for (Task t : tasks) {
-                    if (t.getFor().getReference().equals(patientId) &&
-                            t.getCode().getCodingFirstRep()
-                                    .equalsDeep(coding)) {
-                        ifTaskAlreadyExists = true;
-                        if (t.getIntent().equals(Task.TaskIntent.ORDER)) {
-                            //hapiRequestService.putTask(Task.TaskStatus.COMPLETED);
-                            tryToFinishTask(enactmentId, task, dresessionId, patientId);
+                    if (t.getFor().getReference().equals(patientId)) {
+                        if (t.getFocus().getType().equals("Observation")) {
+                            Observation observation = hapiRequestService.getObservation(t.getFocus().getReference());
+                            if (observation.getCode().getCodingFirstRep().equalsDeep(coding)) {
+                                ifTaskAlreadyExists = true;
+                                if (t.getIntent().equals(Task.TaskIntent.ORDER)) {
+                                    //hapiRequestService.putTask(Task.TaskStatus.COMPLETED);
+                                    tryToFinishTask(enactmentId, task, dresessionId, patientId);
+                                }
+                                break;
+                            }
                         }
-                        break;
                     }
                 }
                 if (!ifTaskAlreadyExists) {
@@ -367,15 +370,19 @@ public class ScheduledTasks {
                             boolean ifTaskAlreadyExists = false;
                             ArrayList<Task> tasks = null;//hapiRequestService.getTasks(Task.TaskStatus.REQUESTED);
                             for (Task t : tasks) {
-                                if (t.getFor().getReference().equals(patientId) &&
-                                        t.getCode().getCodingFirstRep()
-                                                .equalsDeep(medicationRequest.getStatusReason().getCodingFirstRep())) {
-                                    ifTaskAlreadyExists = true;
-                                    if (t.getIntent().equals(Task.TaskIntent.ORDER)) {
-                                        //hapiRequestService.putTask(Task.TaskStatus.COMPLETED);
-                                        tryToFinishTask(enactmentId, task, dresessionId, patientId);
+                                if (t.getFor().getReference().equals(patientId)) {
+                                    if (t.getFocus().getType() == "MedicationRequest") {
+                                        //TODO medicationRequestByID
+                                        MedicationRequest mR = null;//hapiRequestService.getMedicationRequestList(t.getFocus().getReference());
+                                        if (mR.getCategory().equals(medicationRequest.getCategory())) {
+                                            ifTaskAlreadyExists = true;
+                                            if (t.getIntent().equals(Task.TaskIntent.ORDER)) {
+                                                //hapiRequestService.putTask(Task.TaskStatus.COMPLETED);
+                                                tryToFinishTask(enactmentId, task, dresessionId, patientId);
+                                            }
+                                            break;
+                                        }
                                     }
-                                    break;
                                 }
                             }
                             if (!ifTaskAlreadyExists) {
