@@ -23,7 +23,14 @@ public class Constants {
     public static final String DEONTICS_ACTION_TASK_TYPE = "action";
 
     public static final String META_GUIDELINE_NAME = "project_ph_meta_guideline";
-    public static final String META_GUIDELINE_MISSING_INFO = "Meta guideline is missing";
 
-    public static final String SNOMED_CODING = "http://snomed.info";
+    public static final String SNOMED_CODING_HAPI = "http://snomed.info";
+    public static final String SNOMED_CODING_DEONTICS = "SCT";
+    public static final String IMMUNOTHERAPY_CODE = "64644003";
+    public static final String COMPLICATED_DIARRHEA_CODE = "409587002";
+    public static final String PERSISTENT_DIARRHEA_CODE = "236071009";
+    public static final String SUNITIB_CODE = "421192001";
+    public static final String NIVOLUMAB_CODE = "704191007";
+    public static final String DIARRHEA_SYMPTOMS_CODE = "386661006";
+    public static final String STRONG_DIARRHEA_SYMPTOMS_CODE = "62315008";
 }
