@@ -238,7 +238,7 @@ public class HapiRequestService {
         log.debug(outcome.toString());
     }
 
-    public List<Task> getTask(Task.TaskStatus status){
+    public List<Task> getTaskList(Task.TaskStatus status){
         log.info("Getting list of tasks with status: " + status.toCode());
         Bundle bundle = client
                 .search()
