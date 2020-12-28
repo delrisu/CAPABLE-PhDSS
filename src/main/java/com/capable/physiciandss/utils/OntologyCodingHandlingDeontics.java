@@ -13,7 +13,7 @@ public class OntologyCodingHandlingDeontics {
 
     static {
         systemDictionary = new HashMap<>();
-        systemDictionary.put("SCT", Constants.SNOMED_CODING_HAPI);
+        systemDictionary.put(Constants.SNOMED_CODING_DEONTICS, Constants.SNOMED_CODING_HAPI);
     }
 
     private Coding coding;

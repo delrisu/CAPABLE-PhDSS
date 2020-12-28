@@ -80,6 +80,8 @@ public class ScheduledTasks {
                     log.debug("Payload is missing");
                 }
             });
+        } else {
+            log.debug("There isn't any data to process");
         }
     }
 
@@ -261,20 +263,15 @@ public class ScheduledTasks {
     //TODO fill gaps
     private void prepareRequestedTask(String patientId, String focusResourceId) {
         Task newTask = new Task();
+        newTask.setIntent(Task.TaskIntent.ORDER);
         newTask.setStatus(Task.TaskStatus.REQUESTED);
         newTask.setFor(new ReferenceHandling(patientId).getReference());
         newTask.setFocus(new ReferenceHandling(focusResourceId).getReference());
         //hapiRequestService.createTask(newTask);
     }
 
-    //TODO fill gaps
     private String prepareRequestedObservation(Coding coding) {
-        ArrayList<Coding> codings = new ArrayList<>();
-        codings.add(coding);
-        Observation observation = new Observation();
-        observation.setCode(new CodeableConcept().setCoding(codings));
-        observation.setStatus(Observation.ObservationStatus.PRELIMINARY);
-        return null;//hapiRequestService.postObservation(Observation);
+        return hapiRequestService.createObservation(coding.getSystem(), coding.getCode(), Observation.ObservationStatus.PRELIMINARY);
     }
 
 
