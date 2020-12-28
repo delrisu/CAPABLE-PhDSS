@@ -56,7 +56,7 @@ public class ScheduledTasks {
                     switch (payloadType) {
                         case "MedicationRequest":
                             patientId = Optional.ofNullable(hapiRequestService.
-                                    getMedicationRequestById(payloadResourceReference.getReference()).
+                                    getMedicationRequest(payloadResourceReference.getReference()).
                                     getSubject().
                                     getReference());
                             log.debug("Found change in Medication Request for patient with id: " + patientId);
@@ -212,8 +212,7 @@ public class ScheduledTasks {
                 });
     }
 
-    //TODO fill gaps
-    private void handleReportedData(String enactmentId, PlanTask task, ItemData itemData,
+    private void handleReportedData(String enactmentId, PlanTask currentProcessedTask, ItemData itemData,
                                     String dreSessionId, String patientId) {
         JsonNode metaProperties = itemData.getMetaprops();
         if (!metaProperties.findValue("resourceType").isNull()) {
@@ -221,12 +220,12 @@ public class ScheduledTasks {
                 String ontologyCodingDeon = metaProperties.get("ontology.coding").asText();
                 OntologyCodingHandlingDeontics ontologyCoding = new OntologyCodingHandlingDeontics(ontologyCodingDeon);
                 boolean ifTaskAlreadyExists = false;
-                ArrayList<Task> tasks = null;//hapiRequestService.getTasks(Task.TaskStatus.REQUESTED);
-                for (Task t : tasks) {
-                    if (t.getFor().getReference().equals(patientId)) {
-                        if (t.getFocus().getType().equals("Observation")) {
+                ArrayList<Task> tasks = (ArrayList<Task>) hapiRequestService.getTaskList(Task.TaskStatus.REQUESTED);
+                for (Task task : tasks) {
+                    if (task.getFor().getReference().equals(patientId)) {
+                        if (task.getFocus().getType().equals("Observation")) {
                             Observation observation = hapiRequestService
-                                    .getObservation(t.getFocus().getReference());
+                                    .getObservation(task.getFocus().getReference());
                             if (observation.getCode().getCodingFirstRep().getCode()
                                     .equals(ontologyCoding.getCode())
                                     &&
@@ -236,8 +235,8 @@ public class ScheduledTasks {
                                 ifTaskAlreadyExists = true;
                                 if (observation.getStatus().equals(Observation.ObservationStatus.REGISTERED)) {
                                     log.debug("Observation affiliated with task has been filled");
-                                    //hapiRequestService.putTask(Task.TaskStatus.COMPLETED);
-                                    tryToFinishTask(enactmentId, task, dreSessionId, patientId);
+                                    hapiRequestService.updateTask(task, Task.TaskStatus.COMPLETED);
+                                    tryToFinishTask(enactmentId, currentProcessedTask, dreSessionId, patientId);
                                 }
                                 break;
                             }
@@ -260,14 +259,8 @@ public class ScheduledTasks {
         }
     }
 
-    //TODO fill gaps
     private void prepareRequestedTask(String patientId, String focusResourceId) {
-        Task newTask = new Task();
-        newTask.setIntent(Task.TaskIntent.ORDER);
-        newTask.setStatus(Task.TaskStatus.REQUESTED);
-        newTask.setFor(new ReferenceHandling(patientId).getReference());
-        newTask.setFocus(new ReferenceHandling(focusResourceId).getReference());
-        //hapiRequestService.createTask(newTask);
+        hapiRequestService.createTask(new ReferenceHandling(patientId).getReference(), new ReferenceHandling(focusResourceId).getReference());
     }
 
     private String prepareRequestedObservation(Coding coding) {
@@ -522,8 +515,7 @@ public class ScheduledTasks {
         }
     }
 
-    //TODO fill gaps
-    private void handleInteractiveMedicationRequest(String enactmentId, PlanTask task, String patientId,
+    private void handleInteractiveMedicationRequest(String enactmentId, PlanTask currentProcessedTask, String patientId,
                                                     String dreSessionId, JsonNode metaProperties) {
         if (!metaProperties.findValue("resource").isNull()) {
             ObjectMapper objectMapper = new ObjectMapper();
@@ -533,20 +525,20 @@ public class ScheduledTasks {
                                 metaProperties.get("resource").asText(), MedicationRequest.class
                         );
                 boolean ifTaskAlreadyExists = false;
-                ArrayList<Task> tasks = null;//hapiRequestService.getTasks(Task.TaskStatus.REQUESTED);
-                for (Task task_ : tasks) {
-                    if (task_.getFor().getReference().equals(patientId)) {
-                        if (task_.getFocus().getType().equals("MedicationRequest")) {
+                ArrayList<Task> tasks = (ArrayList<Task>) hapiRequestService.getTaskList(Task.TaskStatus.REQUESTED);
+                for (Task task : tasks) {
+                    if (task.getFor().getReference().equals(patientId)) {
+                        if (task.getFocus().getType().equals("MedicationRequest")) {
                             MedicationRequest mR = hapiRequestService.
-                                    getMedicationRequestById(task_.getFocus().getReference());
+                                    getMedicationRequest(task.getFocus().getReference());
                             if (mR.getCategory().equals(medicationRequest.getCategory())) {
                                 log.debug("Task with given code already exist");
                                 ifTaskAlreadyExists = true;
                                 if (mR.getStatus()
                                         .equals(MedicationRequest.MedicationRequestStatus.ACTIVE)) {
                                     log.debug("Medication request affiliated with task has been activated");
-                                    //hapiRequestService.putTask(Task.TaskStatus.COMPLETED);
-                                    tryToFinishTask(enactmentId, task, dreSessionId, patientId);
+                                    hapiRequestService.updateTask(task, Task.TaskStatus.COMPLETED);
+                                    tryToFinishTask(enactmentId, currentProcessedTask, dreSessionId, patientId);
                                 }
                                 break;
                             }
