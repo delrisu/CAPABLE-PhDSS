@@ -8,6 +8,7 @@ import com.capable.physiciandss.configuration.HapiConnectionConfig;
 import com.capable.physiciandss.hapi.Connection;
 import org.hl7.fhir.instance.model.api.IBaseBundle;
 import org.hl7.fhir.r4.model.*;
+import org.hl7.fhir.r4.model.codesystems.ObservationStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
@@ -180,6 +181,15 @@ public class HapiRequestService {
         return outcome.getId().getValue();
     }
 
+    public void updateObservation(Observation observation, Observation.ObservationStatus status) {
+        log.info("Updating communication status");
+        observation.setStatus(status);
+
+        MethodOutcome outcome = client.update().resource(observation).execute();
+
+        log.debug(outcome.toString());
+    }
+
     public String postMedicationRequest(MedicationRequest medicationRequest,
                                         MedicationRequest.MedicationRequestStatus status,
                                         MedicationRequest.MedicationRequestIntent medicationRequestIntent,
@@ -224,6 +234,47 @@ public class HapiRequestService {
         communication.setStatus(status);
 
         MethodOutcome outcome = client.update().resource(communication).execute();
+
+        log.debug(outcome.toString());
+    }
+
+    public List<Task> getTask(Task.TaskStatus status){
+        log.info("Getting list of tasks with status: " + status.toCode());
+        Bundle bundle = client
+                .search()
+                .forResource(Task.class)
+                .where(Task.STATUS.exactly().code(status.toCode()))
+                .returnBundle(Bundle.class)
+                .execute();
+
+        List<Task> tasks =
+                new ArrayList<>(BundleUtil.toListOfResourcesOfType(ctx, bundle, Task.class));
+        while (bundle.getLink(IBaseBundle.LINK_NEXT) != null) {
+            bundle = client
+                    .loadPage()
+                    .next(bundle)
+                    .execute();
+            tasks.addAll(BundleUtil.toListOfResourcesOfType(ctx, bundle, Task.class));
+        }
+        return tasks;
+    }
+
+    public void createTask(Reference patient, Reference resource){
+        Task task = new Task();
+        task.setIntent(Task.TaskIntent.ORDER);
+        task.setStatus(Task.TaskStatus.REQUESTED);
+        task.setFor(patient);
+        task.setFocus(resource);
+
+        MethodOutcome outcome = client.create().resource(task).execute();
+
+        log.debug(outcome.toString());
+    }
+
+    public void updateTask(Task task, Task.TaskStatus status){
+        task.setStatus(status);
+
+        MethodOutcome outcome = client.update().resource(task).execute();
 
         log.debug(outcome.toString());
     }
