@@ -226,11 +226,12 @@ public class ScheduledTasks {
                         if (task.getFocus().getType().equals("Observation")) {
                             Observation observation = hapiRequestService
                                     .getObservation(task.getFocus().getReference());
-                            if (observation.getCode().getCodingFirstRep().getCode()
-                                    .equals(ontologyCoding.getCode())
-                                    &&
-                                    observation.getCode().getCodingFirstRep().getSystem()
-                                            .equals(ontologyCoding.getSystem())) {
+                            Coding observationCoding = observation.getCode().getCodingFirstRep();
+                            Coding ontologyCoding_ = ontologyCoding.getCoding();
+                            if (isCodingMatching(
+                                    observationCoding.getCode(), ontologyCoding_.getCode(),
+                                    observationCoding.getSystem(), ontologyCoding_.getSystem()
+                            )) {
                                 log.debug("Task with given code already exist");
                                 ifTaskAlreadyExists = true;
                                 if (observation.getStatus().equals(Observation.ObservationStatus.REGISTERED)) {
@@ -259,6 +260,14 @@ public class ScheduledTasks {
         }
     }
 
+    private boolean isCodingMatching(String code, String code2, String system, String system2) {
+        return code
+                .equals(code2)
+                &&
+                system
+                        .equals(system2);
+    }
+
     private void prepareRequestedTask(String patientId, String focusResourceId) {
         hapiRequestService.createTask(new ReferenceHandling(patientId).getReference(), new ReferenceHandling(focusResourceId).getReference());
     }
@@ -274,12 +283,9 @@ public class ScheduledTasks {
             String ontologyCoding = metaProperties.get("ontology.coding").asText();
             OntologyCodingHandlingDeontics codingHandling = new OntologyCodingHandlingDeontics(ontologyCoding);
             String itemDataValue = "0";
-            DateTimeType yesterdayDate = new DateTimeType(new Date());
-            yesterdayDate.add(5, -1);
-            DateTimeType twoDaysAgoDate = new DateTimeType(new Date());
-            twoDaysAgoDate.add(5, -2);
-            DateTimeType threeDaysAgoDate = new DateTimeType(new Date());
-            threeDaysAgoDate.add(5, -3);
+            DateTimeType yesterdayDate = getDateBeforeCurrentDate(1);
+            DateTimeType twoDaysAgoDate = getDateBeforeCurrentDate(2);
+            DateTimeType threeDaysAgoDate = getDateBeforeCurrentDate(3);
             switch (codingHandling.getSystem()) {
                 case SNOMED_CODING_DEONTICS:
                     switch (codingHandling.getCode()) {
@@ -307,6 +313,12 @@ public class ScheduledTasks {
         }
     }
 
+    private DateTimeType getDateBeforeCurrentDate(int daysCount) {
+        DateTimeType yesterdayDate = new DateTimeType(new Date());
+        yesterdayDate.add(5, -daysCount);
+        return yesterdayDate;
+    }
+
     private void handlePersistentDiarrhea(String enactmentId, PlanTask task, ItemData itemData,
                                           String dreSessionId, String patientId, String itemDataValue,
                                           DateTimeType yesterdayDate, DateTimeType twoDaysAgo,
@@ -318,18 +330,19 @@ public class ScheduledTasks {
                 getObservationList(patientId);
         for (Observation observation : observationList) {
             Coding observationCoding = observation.getCode().getCodingFirstRep();
-            if (observationCoding.getSystem().equals(SNOMED_CODING_HAPI) &&
-                    observationCoding.getCode().equals(DIARRHEA_SYMPTOMS_CODE)) {
+            DateTimeType observationDate = observation.getEffectiveDateTimeType();
+            if (isCodingMatching(
+                    observationCoding.getSystem(), SNOMED_CODING_HAPI,
+                    observationCoding.getCode(), DIARRHEA_SYMPTOMS_CODE
+            )) {
                 if (!ifCurrentDay
-                        && observation.getEffectiveDateTimeType().after(yesterdayDate)) {
+                        && observationDate.after(yesterdayDate)) {
                     ifCurrentDay = true;
                 } else if (!ifYesterday
-                        && observation.getEffectiveDateTimeType().before(yesterdayDate)
-                        && observation.getEffectiveDateTimeType().after(twoDaysAgo)) {
+                        && isBetweenDates(observationDate, yesterdayDate, twoDaysAgo)) {
                     ifYesterday = true;
                 } else if (!ifTwoDaysAgo
-                        && observation.getEffectiveDateTimeType().before(twoDaysAgo)
-                        && observation.getEffectiveDateTimeType().after(threeDaysAgo)) {
+                        && isBetweenDates(observationDate, twoDaysAgo, threeDaysAgo)) {
                     ifTwoDaysAgo = true;
                 }
             }
@@ -342,7 +355,7 @@ public class ScheduledTasks {
                 .putDataValue(itemData.getName(), itemDataValue, dreSessionId)
                 .subscribe(dataValueOutput -> {
                     if (dataValueOutput.isSuccess()) {
-                        log.debug("Put medication request data value in deontics  for patient with id: "
+                        log.debug("Put observation data value in deontics  for patient with id: "
                                 + patientId);
                         tryToFinishTask(enactmentId, task, dreSessionId, patientId);
                     } else {
@@ -351,15 +364,28 @@ public class ScheduledTasks {
                 });
     }
 
+    private boolean isBetweenDates(DateTimeType Date, DateTimeType firstDate, DateTimeType secondDate) {
+        return Date.before(firstDate)
+                && Date.after(secondDate);
+    }
+
     private void handleComplicatedDiarrhea(String enactmentId, PlanTask task, ItemData itemData,
                                            String dreSessionId, String patientId, String itemDataValue, DateTimeType yesterdayDate) {
         ArrayList<Observation> observations = (ArrayList<Observation>) hapiRequestService.getObservationList(patientId);
         for (Observation observation : observations) {
             Coding observationCoding = observation.getCode().getCodingFirstRep();
             if (observation.getEffectiveDateTimeType().after(yesterdayDate)) {
-                if (observationCoding.getSystem().equals(SNOMED_CODING_HAPI) &&
-                        (observationCoding.getCode().equals(STRONG_DIARRHEA_SYMPTOMS_CODE)
-                                || observationCoding.getCode().equals(DIARRHEA_SYMPTOMS_CODE))) {
+                if (
+                        isCodingMatching(
+                                observationCoding.getSystem(), SNOMED_CODING_HAPI,
+                                observationCoding.getCode(), STRONG_DIARRHEA_SYMPTOMS_CODE
+                        )
+                                ||
+                                isCodingMatching(
+                                        observationCoding.getSystem(), SNOMED_CODING_HAPI,
+                                        observationCoding.getCode(), DIARRHEA_SYMPTOMS_CODE
+                                )
+                ) {
                     itemDataValue = "1";
                 }
             }
@@ -368,7 +394,7 @@ public class ScheduledTasks {
                 .putDataValue(itemData.getName(), itemDataValue, dreSessionId)
                 .subscribe(dataValueOutput -> {
                     if (dataValueOutput.isSuccess()) {
-                        log.debug("Put medication request data value in deontics  for patient with id: "
+                        log.debug("Put observation data value in deontics  for patient with id: "
                                 + patientId);
                         tryToFinishTask(enactmentId, task, dreSessionId, patientId);
                     } else {
@@ -382,10 +408,16 @@ public class ScheduledTasks {
         ArrayList<MedicationRequest> medicationRequests = (ArrayList<MedicationRequest>) hapiRequestService.getMedicationRequestList(patientId);
         for (MedicationRequest medicationRequest : medicationRequests) {
             Coding mrCoding = medicationRequest.getCategoryFirstRep().getCodingFirstRep();
-            if (mrCoding.getSystem().equals(SNOMED_CODING_HAPI) && mrCoding.getCode().equals(SUNITIB_CODE)) {
+            if (isCodingMatching(
+                    mrCoding.getSystem(), SNOMED_CODING_HAPI,
+                    mrCoding.getCode(), SUNITIB_CODE
+            )) {
                 itemDataValue = "1";
                 break;
-            } else if (mrCoding.getSystem().equals(SNOMED_CODING_HAPI) && mrCoding.getCode().equals(NIVOLUMAB_CODE)) {
+            } else if (isCodingMatching(
+                    mrCoding.getSystem(), SNOMED_CODING_HAPI,
+                    mrCoding.getCode(), NIVOLUMAB_CODE
+            )) {
                 itemDataValue = "1";
                 break;
             }
@@ -629,7 +661,7 @@ public class ScheduledTasks {
         DateTimeType dosageEndDate = medicationRequests.get(0).getDosageInstruction()
                 .get(0).getTiming().getRepeat().getBoundsPeriod().getEndElement();
 
-        if (dosageStartDate.before(date) && dosageEndDate.after(date)) {
+        if (isBetweenDates(date, dosageStartDate, dosageEndDate)) {
             return Optional.of(medicationRequests.get(0));
         } else {
             return Optional.empty();
