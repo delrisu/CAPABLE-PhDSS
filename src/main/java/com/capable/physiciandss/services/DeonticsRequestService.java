@@ -215,7 +215,7 @@ public class DeonticsRequestService extends RootService {
         return webClient.put()
                 .uri(Constants.DRE_API_URL + "/DataValue")
                 .header("x-dresessionid", sessionId)
-                .body(Mono.just(dataValuesBody), DataValueBody.class)
+                .body(Mono.just(dataValuesBody.getDataValueBodies()), DataValueBody[].class)
                 .retrieve()
                 .onStatus(HttpStatus::isError, response -> onError(response, "putDataValue"))
                 .onStatus(HttpStatus::is2xxSuccessful, response -> onSuccess("putDataValue"))
