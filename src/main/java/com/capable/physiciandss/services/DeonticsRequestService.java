@@ -202,7 +202,7 @@ public class DeonticsRequestService extends RootService {
                 .bodyToMono(DataValueOutput.class);
     }
 
-    public Mono<DataValuesOutput> putDataValues(HashMap<String, String> dataItemNameValuesMap, String sessionId) {
+    public Mono<DataValueOutput[]> putDataValues(HashMap<String, String> dataItemNameValuesMap, String sessionId) {
         DataValuesBody dataValuesBody = new DataValuesBody();
         ArrayList<DataValueBody> dataValueBodyArrayList = new ArrayList<>();
         dataItemNameValuesMap.forEach(
@@ -219,7 +219,7 @@ public class DeonticsRequestService extends RootService {
                 .retrieve()
                 .onStatus(HttpStatus::isError, response -> onError(response, "putDataValue"))
                 .onStatus(HttpStatus::is2xxSuccessful, response -> onSuccess("putDataValue"))
-                .bodyToMono(DataValuesOutput.class);
+                .bodyToMono(DataValueOutput[].class);
     }
 
     public Mono<ConfirmTaskOutput> putConfirmTask(String name, String sessionId) {
