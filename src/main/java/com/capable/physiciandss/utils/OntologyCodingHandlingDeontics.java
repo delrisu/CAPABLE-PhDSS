@@ -16,15 +16,15 @@ public class OntologyCodingHandlingDeontics {
         systemDictionary.put(Constants.SNOMED_CODING_DEONTICS, Constants.SNOMED_CODING_HAPI);
     }
 
-    private Coding coding;
+    private Coding coding = new Coding();
 
 
     public OntologyCodingHandlingDeontics(String deonticsOntologyCoding) {
-        String deonticsSystem = deonticsOntologyCoding.split(":")[0];
-        if (OntologyCodingHandlingDeontics.systemDictionary.containsKey(deonticsSystem)) {
-            this.coding.setSystem(OntologyCodingHandlingDeontics.systemDictionary.get(deonticsSystem));
+        String[] splittedString = deonticsOntologyCoding.split(":");
+        if (OntologyCodingHandlingDeontics.systemDictionary.containsKey(splittedString[0])) {
+            this.coding.setSystem(OntologyCodingHandlingDeontics.systemDictionary.get(splittedString[0]));
         }
-        this.coding.setCode(deonticsOntologyCoding.split(":")[1]);
+        this.coding.setCode(splittedString[1].split(" ")[0]);
     }
 
     public String getCode() {

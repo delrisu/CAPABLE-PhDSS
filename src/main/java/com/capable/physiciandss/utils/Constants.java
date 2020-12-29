@@ -1,8 +1,8 @@
 package com.capable.physiciandss.utils;
 
 public class Constants {
-    public static final String HAPI_BASE_URL = "http://10.131.46.196:8080/baseR4/";
-
+    //public static final String HAPI_BASE_URL = "http://10.131.46.196:8080/baseR4/";
+    public static final String HAPI_BASE_URL = "http://localhost:9000/baseR4/";
     public static final String GOCOM_BASE_URL = "localhost:9000";
 
 
@@ -23,8 +23,9 @@ public class Constants {
     public static final String DEONTICS_ACTION_TASK_TYPE = "action";
 
     public static final String META_GUIDELINE_NAME = "project_ph_meta_guideline";
+    public static final String HAPI_DATETIMETYPE_FORMAT = "yyyy-MM-dd'T'hh:mm:ss+zz:zz";
 
-    public static final String SNOMED_CODING_HAPI = "http://snomed.info";
+    public static final String SNOMED_CODING_HAPI = "http://snomed.info/sct";
     public static final String SNOMED_CODING_DEONTICS = "SCT";
     public static final String IMMUNOTHERAPY_CODE = "64644003";
     public static final String COMPLICATED_DIARRHEA_CODE = "409587002";

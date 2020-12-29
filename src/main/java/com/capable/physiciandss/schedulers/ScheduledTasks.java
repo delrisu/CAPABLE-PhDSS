@@ -90,7 +90,7 @@ public class ScheduledTasks {
                 .getPathwayByName(META_GUIDELINE_NAME)
                 .subscribe(pathways -> {
                     if (pathways.length < 1) {
-                        log.info("Meta guideline is missing");
+                        log.debug("Meta guideline is missing");
                     } else {
                         deonticsRequestService
                                 .postEnact(pathways[0].getId(), patientId)
@@ -184,39 +184,46 @@ public class ScheduledTasks {
         deonticsRequestService
                 .getData(task.getName(), dreSessionId)
                 .subscribe(itemDataList -> {
+                    Map<String, String> dataItemToValueMap = new HashMap<>();
                     for (ItemData itemData : itemDataList) {
+                        Optional<String> value;
                         JsonNode metaProperties = itemData.getMetaprops();
-                        if (!metaProperties.findValue("source").isNull()) {
+                        if (metaProperties.findValue("source") != null) {
                             switch (metaProperties.get("source").asText()) {
                                 case "stored":
                                     log.debug("Found stored data item to process");
-                                    handleStoredData(enactmentId, task, itemData, dreSessionId, patientId);
+                                    value = handleStoredData(enactmentId, task, itemData, dreSessionId, patientId);
                                     break;
                                 case "abstracted":
                                     log.debug("Found abstracted data item to process");
-                                    handleAbstractedData(enactmentId, task, itemData, dreSessionId, patientId);
+                                    value = handleAbstractedData(enactmentId, task, itemData, dreSessionId, patientId);
                                     break;
                                 case "reported":
                                     log.debug("Found reported data item to process");
-                                    handleReportedData(enactmentId, task, itemData, dreSessionId, patientId);
+                                    value = handleReportedData(enactmentId, task, itemData, dreSessionId, patientId);
                                     break;
                                 default:
                                     log.debug("Unknown source type");
+                                    value = Optional.empty();
                                     break;
                             }
+                            if (value.isPresent())
+                                dataItemToValueMap.put(itemData.getName(), value.get());
                         } else {
                             log.debug("Missing source node");
                         }
                     }
+                    deonticsRequestService.putDataValues(dataItemToValueMap);
+                    tryToFinishTask(enactmentId, task, dreSessionId, patientId);
                 }, getDataException -> {
                 });
     }
 
-    private void handleReportedData(String enactmentId, PlanTask currentProcessedTask, ItemData itemData,
-                                    String dreSessionId, String patientId) {
+    private Optional<String> handleReportedData(String enactmentId, PlanTask currentProcessedTask, ItemData itemData,
+                                                String dreSessionId, String patientId) {
         JsonNode metaProperties = itemData.getMetaprops();
-        if (!metaProperties.findValue("resourceType").isNull()) {
-            if (!metaProperties.findValue("ontology.coding").isNull()) {
+        if (metaProperties.findValue("resource") != null) {
+            if (metaProperties.findValue("ontology.coding") != null) {
                 String ontologyCodingDeon = metaProperties.get("ontology.coding").asText();
                 OntologyCodingHandlingDeontics ontologyCoding = new OntologyCodingHandlingDeontics(ontologyCodingDeon);
                 boolean ifTaskAlreadyExists = false;
@@ -237,7 +244,7 @@ public class ScheduledTasks {
                                 if (observation.getStatus().equals(Observation.ObservationStatus.REGISTERED)) {
                                     log.debug("Observation affiliated with task has been filled");
                                     hapiRequestService.updateTask(task, Task.TaskStatus.COMPLETED);
-                                    tryToFinishTask(enactmentId, currentProcessedTask, dreSessionId, patientId);
+                                    return Optional.of(observation.getValueQuantity().getValue().toPlainString());
                                 }
                                 break;
                             }
@@ -258,14 +265,16 @@ public class ScheduledTasks {
         } else {
             log.debug("Missing resourceType in metaProperties");
         }
+        return Optional.empty();
     }
 
     private boolean isCodingMatching(String code, String code2, String system, String system2) {
+        if (code == null || code2 == null || system == null || system2 == null)
+            return false;
         return code
                 .equals(code2)
-                &&
-                system
-                        .equals(system2);
+                && system
+                .equals(system2);
     }
 
     private void prepareRequestedTask(String patientId, String focusResourceId) {
@@ -277,9 +286,9 @@ public class ScheduledTasks {
     }
 
 
-    private void handleAbstractedData(String enactmentId, PlanTask task, ItemData itemData, String dreSessionId, String patientId) {
+    private Optional<String> handleAbstractedData(String enactmentId, PlanTask task, ItemData itemData, String dreSessionId, String patientId) {
         JsonNode metaProperties = itemData.getMetaprops();
-        if (!metaProperties.findValue("ontology.coding").isNull()) {
+        if (metaProperties.findValue("ontology.coding") != null) {
             String ontologyCoding = metaProperties.get("ontology.coding").asText();
             OntologyCodingHandlingDeontics codingHandling = new OntologyCodingHandlingDeontics(ontologyCoding);
             String itemDataValue = "0";
@@ -287,23 +296,24 @@ public class ScheduledTasks {
             DateTimeType twoDaysAgoDate = getDateBeforeCurrentDate(2);
             DateTimeType threeDaysAgoDate = getDateBeforeCurrentDate(3);
             switch (codingHandling.getSystem()) {
-                case SNOMED_CODING_DEONTICS:
+                case SNOMED_CODING_HAPI:
                     switch (codingHandling.getCode()) {
                         case IMMUNOTHERAPY_CODE:
-                            handleOnImmunotherapy(enactmentId, task, itemData, dreSessionId, patientId, itemDataValue);
-                            break;
+                            log.debug("Found immunotherapy case for patient with id: " + patientId);
+                            return handleOnImmunotherapy(enactmentId, task, itemData, dreSessionId, patientId, itemDataValue);
                         case COMPLICATED_DIARRHEA_CODE:
-                            handleComplicatedDiarrhea(enactmentId, task, itemData, dreSessionId, patientId, itemDataValue,
+                            log.debug("Found complicated diarrhea case for patient with id: " + patientId);
+                            return handleComplicatedDiarrhea(enactmentId, task, itemData, dreSessionId, patientId, itemDataValue,
                                     yesterdayDate);
-                            break;
                         case PERSISTENT_DIARRHEA_CODE:
-                            handlePersistentDiarrhea(enactmentId, task, itemData, dreSessionId, patientId, itemDataValue,
+                            log.debug("Found persistent diarrhea case for patient with id: " + patientId);
+                            return handlePersistentDiarrhea(enactmentId, task, itemData, dreSessionId, patientId, itemDataValue,
                                     yesterdayDate, twoDaysAgoDate, threeDaysAgoDate);
-                            break;
                         default:
                             log.debug("Unknown code value");
                             break;
                     }
+                    break;
                 default:
                     log.debug("Unknown coding system");
                     break;
@@ -311,6 +321,7 @@ public class ScheduledTasks {
         } else {
             log.debug("Missing ontology.coding in metaProperties");
         }
+        return Optional.empty();
     }
 
     private DateTimeType getDateBeforeCurrentDate(int daysCount) {
@@ -319,10 +330,10 @@ public class ScheduledTasks {
         return yesterdayDate;
     }
 
-    private void handlePersistentDiarrhea(String enactmentId, PlanTask task, ItemData itemData,
-                                          String dreSessionId, String patientId, String itemDataValue,
-                                          DateTimeType yesterdayDate, DateTimeType twoDaysAgo,
-                                          DateTimeType threeDaysAgo) {
+    private Optional<String> handlePersistentDiarrhea(String enactmentId, PlanTask task, ItemData itemData,
+                                                      String dreSessionId, String patientId, String itemDataValue,
+                                                      DateTimeType yesterdayDate, DateTimeType twoDaysAgo,
+                                                      DateTimeType threeDaysAgo) {
         boolean ifCurrentDay = false;
         boolean ifYesterday = false;
         boolean ifTwoDaysAgo = false;
@@ -351,26 +362,21 @@ public class ScheduledTasks {
                 break;
             }
         }
-        deonticsRequestService
-                .putDataValue(itemData.getName(), itemDataValue, dreSessionId)
-                .subscribe(dataValueOutput -> {
-                    if (dataValueOutput.isSuccess()) {
-                        log.debug("Put observation data value in deontics  for patient with id: "
-                                + patientId);
-                        tryToFinishTask(enactmentId, task, dreSessionId, patientId);
-                    } else {
-                        log.debug("Cannot put dataValue");
-                    }
-                });
+        return Optional.of(itemDataValue);
     }
 
     private boolean isBetweenDates(DateTimeType Date, DateTimeType firstDate, DateTimeType secondDate) {
-        return Date.before(firstDate)
-                && Date.after(secondDate);
+        if (firstDate.after(secondDate)) {
+            return Date.before(firstDate)
+                    && Date.after(secondDate);
+        } else {
+            return Date.before(secondDate)
+                    && Date.after(firstDate);
+        }
     }
 
-    private void handleComplicatedDiarrhea(String enactmentId, PlanTask task, ItemData itemData,
-                                           String dreSessionId, String patientId, String itemDataValue, DateTimeType yesterdayDate) {
+    private Optional<String> handleComplicatedDiarrhea(String enactmentId, PlanTask task, ItemData itemData,
+                                                       String dreSessionId, String patientId, String itemDataValue, DateTimeType yesterdayDate) {
         ArrayList<Observation> observations = (ArrayList<Observation>) hapiRequestService.getObservationList(patientId);
         for (Observation observation : observations) {
             Coding observationCoding = observation.getCode().getCodingFirstRep();
@@ -380,31 +386,21 @@ public class ScheduledTasks {
                                 observationCoding.getSystem(), SNOMED_CODING_HAPI,
                                 observationCoding.getCode(), STRONG_DIARRHEA_SYMPTOMS_CODE
                         )
-                                ||
-                                isCodingMatching(
-                                        observationCoding.getSystem(), SNOMED_CODING_HAPI,
-                                        observationCoding.getCode(), DIARRHEA_SYMPTOMS_CODE
-                                )
+                                || isCodingMatching(
+                                observationCoding.getSystem(), SNOMED_CODING_HAPI,
+                                observationCoding.getCode(), DIARRHEA_SYMPTOMS_CODE
+                        )
                 ) {
                     itemDataValue = "1";
                 }
             }
         }
-        deonticsRequestService
-                .putDataValue(itemData.getName(), itemDataValue, dreSessionId)
-                .subscribe(dataValueOutput -> {
-                    if (dataValueOutput.isSuccess()) {
-                        log.debug("Put observation data value in deontics  for patient with id: "
-                                + patientId);
-                        tryToFinishTask(enactmentId, task, dreSessionId, patientId);
-                    } else {
-                        log.debug("Cannot put dataValue");
-                    }
-                });
+        return Optional.of(itemDataValue);
+
     }
 
-    private void handleOnImmunotherapy(String enactmentId, PlanTask task, ItemData itemData,
-                                       String dreSessionId, String patientId, String itemDataValue) {
+    private Optional<String> handleOnImmunotherapy(String enactmentId, PlanTask task, ItemData itemData,
+                                                   String dreSessionId, String patientId, String itemDataValue) {
         ArrayList<MedicationRequest> medicationRequests = (ArrayList<MedicationRequest>) hapiRequestService.getMedicationRequestList(patientId);
         for (MedicationRequest medicationRequest : medicationRequests) {
             Coding mrCoding = medicationRequest.getCategoryFirstRep().getCodingFirstRep();
@@ -422,38 +418,27 @@ public class ScheduledTasks {
                 break;
             }
         }
-        deonticsRequestService
-                .putDataValue(itemData.getName(), itemDataValue, dreSessionId)
-                .subscribe(dataValueOutput -> {
-                    if (dataValueOutput.isSuccess()) {
-                        log.debug("Put medication request data value in deontics  for patient with id: "
-                                + patientId);
-                        tryToFinishTask(enactmentId, task, dreSessionId, patientId);
-                    } else {
-                        log.debug("Cannot put dataValue");
-                    }
-                });
+        return Optional.of(itemDataValue);
+
     }
 
 
-    private void handleStoredData(String enactmentId, PlanTask task, ItemData itemData,
-                                  String dreSessionId, String patientId) {
+    private Optional<String> handleStoredData(String enactmentId, PlanTask task, ItemData itemData,
+                                              String dreSessionId, String patientId) {
         JsonNode metaProperties = itemData.getMetaprops();
-        if (!metaProperties.findValue("resourceType").isNull()) {
-            if (!metaProperties.findValue("ontology.coding").isNull()) {
+        if (metaProperties.findValue("resource") != null) {
+            if (metaProperties.findValue("ontology.coding") != null) {
                 String ontologyCoding = metaProperties.get("ontology.coding").asText();
                 OntologyCodingHandlingDeontics codingHandling = new OntologyCodingHandlingDeontics(ontologyCoding);
-                switch (metaProperties.get("resourceType").asText()) {
+                switch (metaProperties.get("resource").asText()) {
                     case "Observation":
                         log.debug("Checking observation for essential data - patient id: " + patientId);
-                        handleStoredObservationData(enactmentId, task, itemData, patientId, dreSessionId,
+                        return handleStoredObservationData(enactmentId, task, itemData, patientId, dreSessionId,
                                 codingHandling.getSystem(), codingHandling.getCode());
-                        break;
                     case "MedicationRequest":
                         log.debug("Checking medication request for essential data  - patient id: " + patientId);
-                        handleStoredMedicationRequestData(enactmentId, task, itemData, patientId, dreSessionId,
+                        return handleStoredMedicationRequestData(enactmentId, task, itemData, patientId, dreSessionId,
                                 codingHandling.getSystem(), codingHandling.getCode());
-                        break;
                 }
             } else {
                 log.debug("Missing ontology.coding in metaProperties");
@@ -461,11 +446,12 @@ public class ScheduledTasks {
         } else {
             log.debug("Missing resourceType in metaProperties");
         }
+        return Optional.empty();
     }
 
 
-    private void handleStoredMedicationRequestData(String enactmentId, PlanTask task, ItemData itemData,
-                                                   String patientId, String dreSessionId, String system, String code) {
+    private Optional<String> handleStoredMedicationRequestData(String enactmentId, PlanTask task, ItemData itemData,
+                                                               String patientId, String dreSessionId, String system, String code) {
         ArrayList<MedicationRequest> medicationRequests = (ArrayList<MedicationRequest>) hapiRequestService.
                 getMedicationRequestList(patientId, system, code, MedicationRequest.MedicationRequestStatus.ACTIVE);
         Optional<MedicationRequest> medicationRequest =
@@ -474,47 +460,26 @@ public class ScheduledTasks {
         if (medicationRequest.isPresent()) {
             value = "1";
         }
-        String finalValue = value;
-        deonticsRequestService
-                .putDataValue(itemData.getName(), value, dreSessionId)
-                .subscribe(dataValueOutput -> {
-                    if (dataValueOutput.isSuccess()) {
-                        log.debug("Put medication request data value in deontics  for patient with id: "
-                                + patientId + " dataValue: " + finalValue);
-                        tryToFinishTask(enactmentId, task, dreSessionId, patientId);
-                    } else {
-                        log.debug("Cannot put dataValue");
-                    }
-                });
+        return Optional.of(value);
+
     }
 
 
-    private void handleStoredObservationData(String enactmentId, PlanTask task, ItemData itemData,
-                                             String patientId, String dreSessionId, String system, String code) {
+    private Optional<String> handleStoredObservationData(String enactmentId, PlanTask task, ItemData itemData,
+                                                         String patientId, String dreSessionId, String system, String code) {
         ArrayList<Observation> observations = (ArrayList<Observation>) hapiRequestService.
                 getObservationList(patientId, system, code);
         Optional<Observation> observation = filterObservationListByDate(observations, new DateTimeType(new Date()));
         String valueQuantity = "";
         if (observation.isPresent()) {
-            valueQuantity = observation.get().getValueQuantity().toString();
+            valueQuantity = observation.get().getValueQuantity().getValue().toPlainString();
         }
-        String finalValueQuantity = valueQuantity;
-        deonticsRequestService
-                .putDataValue(itemData.getName(), valueQuantity, dreSessionId)
-                .subscribe(dataValueOutput -> {
-                    if (dataValueOutput.isSuccess()) {
-                        log.debug("Put observation data value in deontics  for patient with id: " +
-                                patientId + " dataValue: " + finalValueQuantity);
-                        tryToFinishTask(enactmentId, task, dreSessionId, patientId);
-                    } else {
-                        log.debug("Cannot put dataValue");
-                    }
-                });
+        return Optional.of(valueQuantity);
     }
 
     private void handleActionTask(String enactmentId, PlanTask task, String dreSessionId, String patientId) {
         JsonNode metaProperties = task.getMetaprops();
-        if (!metaProperties.findValue("interactive").isNull()) {
+        if (metaProperties.findValue("interactive") != null) {
             switch (metaProperties.get("interactive").asText()) {
                 case "0":
                     log.debug("Found automatic task to process for patient with id: " + patientId);
@@ -536,9 +501,10 @@ public class ScheduledTasks {
 
     private void handleInteractiveTask(String enactmentId, PlanTask task, String patientId, String dreSessionId) {
         JsonNode metaProperties = task.getMetaprops();
-        if (!metaProperties.findValue("resourceType").isNull()) {
+        if (metaProperties.findValue("resourceType") != null) {
             switch (metaProperties.get("resourceType").asText()) {
                 case "MedicationRequest":
+                    log.debug("Found interactiveMedicationRequest task: " + patientId);
                     handleInteractiveMedicationRequest(enactmentId, task, patientId, dreSessionId, metaProperties);
                     break;
                 default:
@@ -549,7 +515,7 @@ public class ScheduledTasks {
 
     private void handleInteractiveMedicationRequest(String enactmentId, PlanTask currentProcessedTask, String patientId,
                                                     String dreSessionId, JsonNode metaProperties) {
-        if (!metaProperties.findValue("resource").isNull()) {
+        if (metaProperties.findValue("resource") != null) {
             ObjectMapper objectMapper = new ObjectMapper();
             try {
                 MedicationRequest medicationRequest = objectMapper.
@@ -580,7 +546,7 @@ public class ScheduledTasks {
                 if (!ifTaskAlreadyExists) {
                     log.debug("Task with given code doesnt exist");
                     String medicationRequestId = hapiRequestService
-                            .postMedicationRequest(medicationRequest, MedicationRequest.MedicationRequestStatus.DRAFT,
+                            .createMedicationRequest(medicationRequest, MedicationRequest.MedicationRequestStatus.DRAFT,
                                     MedicationRequest.MedicationRequestIntent.PROPOSAL, patientId);
                     prepareRequestedTask(patientId, medicationRequestId);
                     hapiRequestService
@@ -617,7 +583,7 @@ public class ScheduledTasks {
         deonticsRequestService
                 .getQueryConfirmTask(planTask.getName(), dreSessionId)
                 .subscribe(queryConfirmTask -> {
-                    if (queryConfirmTask == null) {
+                    if (queryConfirmTask.getPrecondition() == null && queryConfirmTask.getCauses() == null) {
                         deonticsRequestService
                                 .putConfirmTask(planTask.getName(), dreSessionId)
                                 .subscribe(confirmTaskOutput -> {
@@ -631,6 +597,8 @@ public class ScheduledTasks {
                                     }
                                 }, confirmTaskException -> {
                                 });
+                    } else {
+                        log.debug("Cannot finish task,\nReasons:" + queryConfirmTask.toString());
                     }
                 }, queryConfirmTaskException -> {
                 });
@@ -638,7 +606,9 @@ public class ScheduledTasks {
 
     private Optional<Observation> filterObservationListByDate
             (ArrayList<Observation> observations, DateTimeType date) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-ddThh:mm:ss+zz:zz");
+        if (observations.size() == 0)
+            return Optional.empty();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(HAPI_DATETIMETYPE_FORMAT);
         observations.sort(Comparator.comparing(o ->
                 LocalDateTime.parse(o.getEffectiveDateTimeType().getValue().toString(), formatter)));
         if (observations.get(0).getEffectiveDateTimeType().before(date)) {
@@ -650,7 +620,9 @@ public class ScheduledTasks {
 
     private Optional<MedicationRequest> filterMedicationRequestListByDate
             (ArrayList<MedicationRequest> medicationRequests, DateTimeType date) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-ddThh:mm:ss+zz:zz");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(HAPI_DATETIMETYPE_FORMAT);
+        if (medicationRequests.size() == 0)
+            return Optional.empty();
         medicationRequests.sort(Comparator.comparing(mR -> LocalDateTime.parse(mR.getDosageInstruction()
                 .get(0).getTiming().getRepeat().getBoundsPeriod()
                 .getEndElement().getValue().toString(), formatter)));
