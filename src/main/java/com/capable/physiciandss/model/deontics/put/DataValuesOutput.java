@@ -8,6 +8,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class DataValuesOutput {
-    private DataValuesOutput[] dataValuesOutputs;
+    private DataValueOutput[] dataValuesOutput;
 
 }
