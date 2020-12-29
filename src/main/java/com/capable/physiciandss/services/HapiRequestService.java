@@ -178,7 +178,7 @@ public class HapiRequestService {
 
         log.debug(outcome.toString());
 
-        return outcome.getId().getValue();
+        return outcome.getId().getResourceType() + '/' + outcome.getId().getIdPart();
     }
 
     public void updateObservation(Observation observation, Observation.ObservationStatus status) {
@@ -206,7 +206,7 @@ public class HapiRequestService {
 
         log.debug(outcome.toString());
 
-        return outcome.getId().getValue();
+        return outcome.getId().getResourceType() + '/' + outcome.getId().getIdPart();
     }
 
     public String createCommunication(Communication.CommunicationStatus status, String referenceId) {
@@ -226,7 +226,7 @@ public class HapiRequestService {
 
         log.debug(outcome.toString());
 
-        return outcome.getId().getValue();
+        return outcome.getId().getResourceType() + '/' + outcome.getId().getIdPart();
     }
 
     public void updateCommunication(Communication communication, Communication.CommunicationStatus status) {
