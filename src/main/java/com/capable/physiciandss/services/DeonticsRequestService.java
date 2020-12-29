@@ -181,10 +181,10 @@ public class DeonticsRequestService extends RootService {
     }
 
 
-    public Mono<EnactOutput> postEnact(String pathwayid, String patientid) {
+    public Mono<EnactOutput> postEnact(String pathwayuri, String patientid) {
         return webClient.post()
                 .uri(Constants.DRE_API_URL + "/Enact")
-                .body(Mono.just(new EnactBody(pathwayid, patientid)), EnactBody.class)
+                .body(Mono.just(new EnactBody(pathwayuri, patientid)), EnactBody.class)
                 .retrieve()
                 .onStatus(HttpStatus::isError, response -> onError(response, "postEnact"))
                 .onStatus(HttpStatus::is2xxSuccessful, response -> onSuccess("postEnact"))
