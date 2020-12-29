@@ -8,7 +8,6 @@ import com.capable.physiciandss.configuration.HapiConnectionConfig;
 import com.capable.physiciandss.hapi.Connection;
 import org.hl7.fhir.instance.model.api.IBaseBundle;
 import org.hl7.fhir.r4.model.*;
-import org.hl7.fhir.r4.model.codesystems.ObservationStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
@@ -68,7 +67,8 @@ public class HapiRequestService {
     }
 
     public List<Observation> getObservationList(String subjectId, String system, String ontologyCoding) {
-        log.info("Getting list of observations with system:" + system + ", ontologyCoding: " + ontologyCoding + " for subject with id: " + subjectId);
+        log.info("Getting list of observations with system:" + system + ", ontologyCoding: "
+                + ontologyCoding + " for subject with id: " + subjectId);
         Bundle bundle = client
                 .search()
                 .forResource(Observation.class)
@@ -162,7 +162,7 @@ public class HapiRequestService {
 
     public String createObservation(String system, String ontologyCoding, Observation.ObservationStatus status) {
         log.info("Creating observation with system: " + system + ", ontologyCoding: " +
-                ontologyCoding +" with status: " + status.toCode());
+                ontologyCoding + " with status: " + status.toCode());
         Observation observation = new Observation();
         CodeableConcept codeableConcept = new CodeableConcept();
         Coding coding = new Coding();
@@ -190,10 +190,10 @@ public class HapiRequestService {
         log.debug(outcome.toString());
     }
 
-    public String postMedicationRequest(MedicationRequest medicationRequest,
-                                        MedicationRequest.MedicationRequestStatus status,
-                                        MedicationRequest.MedicationRequestIntent medicationRequestIntent,
-                                        String patientId) {
+    public String createMedicationRequest(MedicationRequest medicationRequest,
+                                          MedicationRequest.MedicationRequestStatus status,
+                                          MedicationRequest.MedicationRequestIntent medicationRequestIntent,
+                                          String patientId) {
         log.info("Posting medicationRequest");
         medicationRequest.setStatus(status);
         medicationRequest.setIntent(medicationRequestIntent);
@@ -238,7 +238,7 @@ public class HapiRequestService {
         log.debug(outcome.toString());
     }
 
-    public List<Task> getTaskList(Task.TaskStatus status){
+    public List<Task> getTaskList(Task.TaskStatus status) {
         log.info("Getting list of tasks with status: " + status.toCode());
         Bundle bundle = client
                 .search()
@@ -259,7 +259,7 @@ public class HapiRequestService {
         return tasks;
     }
 
-    public void createTask(Reference patient, Reference resource){
+    public void createTask(Reference patient, Reference resource) {
         Task task = new Task();
         task.setIntent(Task.TaskIntent.ORDER);
         task.setStatus(Task.TaskStatus.REQUESTED);
@@ -271,7 +271,7 @@ public class HapiRequestService {
         log.debug(outcome.toString());
     }
 
-    public void updateTask(Task task, Task.TaskStatus status){
+    public void updateTask(Task task, Task.TaskStatus status) {
         task.setStatus(status);
 
         MethodOutcome outcome = client.update().resource(task).execute();
