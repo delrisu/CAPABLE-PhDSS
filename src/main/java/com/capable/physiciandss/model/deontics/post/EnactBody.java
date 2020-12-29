@@ -8,6 +8,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class EnactBody {
-    private String pathwayid;
+    private String pathwayuri;
     private String groupid;
 }
