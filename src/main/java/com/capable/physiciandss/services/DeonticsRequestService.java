@@ -15,6 +15,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+
 
 @Service
 public class DeonticsRequestService extends RootService {
@@ -197,6 +200,23 @@ public class DeonticsRequestService extends RootService {
                 .onStatus(HttpStatus::isError, response -> onError(response, "putDataValue"))
                 .onStatus(HttpStatus::is2xxSuccessful, response -> onSuccess("putDataValue"))
                 .bodyToMono(DataValueOutput.class);
+    }
+
+    public Mono<DataValuesOutput> putDataValues(HashMap<String, String> dataItemNameValuesMap, String sessionId) {
+        DataValuesBody dataValuesBody = new DataValuesBody();
+        ArrayList<DataValueBody> dataValueBodyArrayList = new ArrayList<>();
+        dataItemNameValuesMap.forEach(
+                (itemDataName, itemDataValue) -> dataValueBodyArrayList.add(new DataValueBody(itemDataName, itemDataValue))
+        );
+        dataValuesBody.setDataValueBodies(dataValueBodyArrayList.toArray(new DataValueBody[0]));
+        return webClient.put()
+                .uri(Constants.DRE_API_URL + "/DataValue")
+                .header("x-dresessionid", sessionId)
+                .body(Mono.just(dataValuesBody), DataValueBody.class)
+                .retrieve()
+                .onStatus(HttpStatus::isError, response -> onError(response, "putDataValue"))
+                .onStatus(HttpStatus::is2xxSuccessful, response -> onSuccess("putDataValue"))
+                .bodyToMono(DataValuesOutput.class);
     }
 
     public Mono<ConfirmTaskOutput> putConfirmTask(String name, String sessionId) {
