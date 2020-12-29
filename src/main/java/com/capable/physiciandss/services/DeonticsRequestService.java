@@ -206,7 +206,10 @@ public class DeonticsRequestService extends RootService {
         DataValuesBody dataValuesBody = new DataValuesBody();
         ArrayList<DataValueBody> dataValueBodyArrayList = new ArrayList<>();
         dataItemNameValuesMap.forEach(
-                (itemDataName, itemDataValue) -> dataValueBodyArrayList.add(new DataValueBody(itemDataName, itemDataValue))
+                (itemDataName, itemDataValue) -> {
+                    log.info("Item Data name: " + itemDataName + " Item Data Value: " + itemDataValue);
+                    dataValueBodyArrayList.add(new DataValueBody(itemDataName, itemDataValue));
+                }
         );
         dataValuesBody.setDataValueBodies(dataValueBodyArrayList.toArray(new DataValueBody[0]));
         return webClient.put()
