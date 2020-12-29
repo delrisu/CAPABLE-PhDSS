@@ -184,7 +184,7 @@ public class ScheduledTasks {
         deonticsRequestService
                 .getData(task.getName(), dreSessionId)
                 .subscribe(itemDataList -> {
-                    Map<String, String> dataItemToValueMap = new HashMap<>();
+                    HashMap<String, String> dataItemToValueMap = new HashMap<>();
                     for (ItemData itemData : itemDataList) {
                         Optional<String> value;
                         JsonNode metaProperties = itemData.getMetaprops();
@@ -213,8 +213,12 @@ public class ScheduledTasks {
                             log.debug("Missing source node");
                         }
                     }
-                    deonticsRequestService.putDataValues(dataItemToValueMap);
-                    tryToFinishTask(enactmentId, task, dreSessionId, patientId);
+                    deonticsRequestService.putDataValues(dataItemToValueMap, dreSessionId).subscribe(
+                            dataValuesOutput -> {
+                                log.debug("test");
+                                tryToFinishTask(enactmentId, task, dreSessionId, patientId);
+                            }
+                    );
                 }, getDataException -> {
                 });
     }
@@ -222,7 +226,6 @@ public class ScheduledTasks {
     private Optional<String> handleReportedData(String enactmentId, PlanTask currentProcessedTask, ItemData itemData,
                                                 String dreSessionId, String patientId) {
         JsonNode metaProperties = itemData.getMetaprops();
-        if (metaProperties.findValue("resource") != null) {
             if (metaProperties.findValue("ontology.coding") != null) {
                 String ontologyCodingDeon = metaProperties.get("ontology.coding").asText();
                 OntologyCodingHandlingDeontics ontologyCoding = new OntologyCodingHandlingDeontics(ontologyCodingDeon);
@@ -262,9 +265,6 @@ public class ScheduledTasks {
             } else {
                 log.debug("Missing ontology.coding in metaProperties");
             }
-        } else {
-            log.debug("Missing resourceType in metaProperties");
-        }
         return Optional.empty();
     }
 
@@ -426,11 +426,11 @@ public class ScheduledTasks {
     private Optional<String> handleStoredData(String enactmentId, PlanTask task, ItemData itemData,
                                               String dreSessionId, String patientId) {
         JsonNode metaProperties = itemData.getMetaprops();
-        if (metaProperties.findValue("resource") != null) {
+        if (metaProperties.findValue("resourceType") != null) {
             if (metaProperties.findValue("ontology.coding") != null) {
                 String ontologyCoding = metaProperties.get("ontology.coding").asText();
                 OntologyCodingHandlingDeontics codingHandling = new OntologyCodingHandlingDeontics(ontologyCoding);
-                switch (metaProperties.get("resource").asText()) {
+                switch (metaProperties.get("resourceType").asText()) {
                     case "Observation":
                         log.debug("Checking observation for essential data - patient id: " + patientId);
                         return handleStoredObservationData(enactmentId, task, itemData, patientId, dreSessionId,
