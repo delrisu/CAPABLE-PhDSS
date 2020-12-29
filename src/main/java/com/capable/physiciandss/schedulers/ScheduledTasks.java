@@ -67,7 +67,7 @@ public class ScheduledTasks {
                             break;
                         case "Patient":
                             patientId = Optional.of(payloadResourceReference.getReference());
-                            if (patientId.isPresent() && !alreadyProcessedPatients.contains(patientId.get())) {
+                            if (!alreadyProcessedPatients.contains(patientId.get())) {
                                 log.debug("Found information about new Patient with id: " + patientId);
                                 alreadyProcessedPatients.add(patientId.get());
                                 patientId.ifPresent(this::handleNewPatient);
@@ -93,7 +93,7 @@ public class ScheduledTasks {
                         log.debug("Meta guideline is missing");
                     } else {
                         deonticsRequestService
-                                .postEnact(pathways[0].getId(), patientId)
+                                .postEnact(META_GUIDELINE_NAME + ".pf", patientId)
                                 .subscribe(postEnactResult -> deonticsRequestService
                                         .getEnactmentsByEnactmentId(postEnactResult.getEnactmentid())
                                         .subscribe(
@@ -203,19 +203,17 @@ public class ScheduledTasks {
                                     value = handleReportedData(enactmentId, task, itemData, dreSessionId, patientId);
                                     break;
                                 default:
-                                    log.debug("Unknown source type");
+                                    log.debug("Unknown source type  in enquiry task");
                                     value = Optional.empty();
                                     break;
                             }
-                            if (value.isPresent())
-                                dataItemToValueMap.put(itemData.getName(), value.get());
+                            value.ifPresent(s -> dataItemToValueMap.put(itemData.getName(), s));
                         } else {
-                            log.debug("Missing source node");
+                            log.debug("Missing source node in enquiry task");
                         }
                     }
                     deonticsRequestService.putDataValues(dataItemToValueMap, dreSessionId).subscribe(
                             dataValuesOutput -> {
-                                log.debug("test");
                                 tryToFinishTask(enactmentId, task, dreSessionId, patientId);
                             }
                     );
@@ -242,10 +240,10 @@ public class ScheduledTasks {
                                     observationCoding.getCode(), ontologyCoding_.getCode(),
                                     observationCoding.getSystem(), ontologyCoding_.getSystem()
                             )) {
-                                log.debug("Task with given code already exist");
+                                log.debug("Task with given code already exist in handling reported data\"");
                                 ifTaskAlreadyExists = true;
                                 if (observation.getStatus().equals(Observation.ObservationStatus.REGISTERED)) {
-                                    log.debug("Observation affiliated with task has been filled");
+                                    log.debug("Observation affiliated with task has been filled in handling reported data\"");
                                     hapiRequestService.updateTask(task, Task.TaskStatus.COMPLETED);
                                     return Optional.of(observation.getValueQuantity().getValue().toPlainString());
                                 }
@@ -255,7 +253,7 @@ public class ScheduledTasks {
                     }
                 }
                 if (!ifTaskAlreadyExists) {
-                    log.debug("Task with given code doesnt exist");
+                    log.debug("Task with given code doesnt exist in handling reported data\"");
                     String observationId = prepareRequestedObservation(ontologyCoding.getCoding());
                     prepareRequestedTask(patientId, observationId);
                     hapiRequestService
@@ -263,7 +261,7 @@ public class ScheduledTasks {
                     log.debug("Put communication resource with reference at medication request in HAPI FHIR");
                 }
             } else {
-                log.debug("Missing ontology.coding in metaProperties");
+                log.debug("Missing ontology.coding in metaProperties in handling reported data");
             }
         return Optional.empty();
     }
@@ -310,16 +308,16 @@ public class ScheduledTasks {
                             return handlePersistentDiarrhea(enactmentId, task, itemData, dreSessionId, patientId, itemDataValue,
                                     yesterdayDate, twoDaysAgoDate, threeDaysAgoDate);
                         default:
-                            log.debug("Unknown code value");
+                            log.debug("Unknown code value in handling abstracted data");
                             break;
                     }
                     break;
                 default:
-                    log.debug("Unknown coding system");
+                    log.debug("Unknown coding system in handling abstracted data");
                     break;
             }
         } else {
-            log.debug("Missing ontology.coding in metaProperties");
+            log.debug("Missing ontology.coding in metaProperties in handling abstracted data");
         }
         return Optional.empty();
     }
@@ -441,10 +439,10 @@ public class ScheduledTasks {
                                 codingHandling.getSystem(), codingHandling.getCode());
                 }
             } else {
-                log.debug("Missing ontology.coding in metaProperties");
+                log.debug("Missing ontology.coding in metaProperties in handling stored data");
             }
         } else {
-            log.debug("Missing resourceType in metaProperties");
+            log.debug("Missing resourceType in metaProperties in handling stored data");
         }
         return Optional.empty();
     }
@@ -490,11 +488,11 @@ public class ScheduledTasks {
                     handleInteractiveTask(enactmentId, task, patientId, dreSessionId);
                     break;
                 default:
-                    log.debug("Wrong interactive value");
+                    log.debug("Wrong interactive value  in Action task");
                     break;
             }
         } else {
-            log.debug("Missing interactive node");
+            log.debug("Missing interactive node in Action task");
         }
     }
 
@@ -508,7 +506,7 @@ public class ScheduledTasks {
                     handleInteractiveMedicationRequest(enactmentId, task, patientId, dreSessionId, metaProperties);
                     break;
                 default:
-                    log.debug("Wrong resourceType value");
+                    log.debug("Wrong resourceType value in interactive task");
             }
         }
     }
@@ -530,11 +528,11 @@ public class ScheduledTasks {
                             MedicationRequest mR = hapiRequestService.
                                     getMedicationRequest(task.getFocus().getReference());
                             if (mR.getCategory().equals(medicationRequest.getCategory())) {
-                                log.debug("Task with given code already exist");
+                                log.debug("Task with given code already exist in InteractiveMedicationRequest Task");
                                 ifTaskAlreadyExists = true;
                                 if (mR.getStatus()
                                         .equals(MedicationRequest.MedicationRequestStatus.ACTIVE)) {
-                                    log.debug("Medication request affiliated with task has been activated");
+                                    log.debug("Medication request affiliated with task has been activated in InteractiveMedicationRequest Task");
                                     hapiRequestService.updateTask(task, Task.TaskStatus.COMPLETED);
                                     tryToFinishTask(enactmentId, currentProcessedTask, dreSessionId, patientId);
                                 }
@@ -544,7 +542,7 @@ public class ScheduledTasks {
                     }
                 }
                 if (!ifTaskAlreadyExists) {
-                    log.debug("Task with given code doesnt exist");
+                    log.debug("Task with given code doesnt exist in InteractiveMedicationRequest Task");
                     String medicationRequestId = hapiRequestService
                             .createMedicationRequest(medicationRequest, MedicationRequest.MedicationRequestStatus.DRAFT,
                                     MedicationRequest.MedicationRequestIntent.PROPOSAL, patientId);
@@ -558,14 +556,14 @@ public class ScheduledTasks {
                 e.printStackTrace();
             }
         } else {
-            log.debug("Missing resource Node");
+            log.debug("Missing resource Node in InteractiveMedicationRequest Task");
         }
     }
 
 
     private void handleAutomaticTask(String enactmentId, PlanTask task, String procedure, String patientId, String dreSessionId) {
         deonticsRequestService
-                .postEnact(procedure, patientId)
+                .postEnact(procedure + ".pf", patientId)
                 .subscribe(postEnactResult ->
                         deonticsRequestService
                                 .getEnactmentsByEnactmentId(postEnactResult.getEnactmentid())
@@ -583,7 +581,7 @@ public class ScheduledTasks {
         deonticsRequestService
                 .getQueryConfirmTask(planTask.getName(), dreSessionId)
                 .subscribe(queryConfirmTask -> {
-                    if (queryConfirmTask.getPrecondition() == null && queryConfirmTask.getCauses() == null) {
+                    if (queryConfirmTask.getPrecondition() == null || queryConfirmTask.getCauses() == null) {
                         deonticsRequestService
                                 .putConfirmTask(planTask.getName(), dreSessionId)
                                 .subscribe(confirmTaskOutput -> {
@@ -592,7 +590,7 @@ public class ScheduledTasks {
                                     } else {
                                         log.debug("Task has been completed for patient with id: " + patientId);
                                         deonticsRequestService
-                                                .getPlanTasksUnderTask(DEONTICS_IN_PROGRESS_STATUS, planTask.getName(), dreSessionId)
+                                                .getPlanTasks(DEONTICS_IN_PROGRESS_STATUS, dreSessionId)
                                                 .subscribe(tasks -> handleTasks(enactmentId, patientId, dreSessionId, Optional.of(tasks)));
                                     }
                                 }, confirmTaskException -> {
