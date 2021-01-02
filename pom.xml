@@ -16,7 +16,7 @@
 
     <properties>
         <java.version>1.8</java.version>
-        <hapifhir_version>5.0.2</hapifhir_version>
+        <hapifhir_version>5.2.0</hapifhir_version>
     </properties>
 
     <dependencies>

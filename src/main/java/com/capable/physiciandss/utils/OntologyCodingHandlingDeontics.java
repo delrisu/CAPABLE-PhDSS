@@ -21,10 +21,17 @@ public class OntologyCodingHandlingDeontics {
 
     public OntologyCodingHandlingDeontics(String deonticsOntologyCoding) {
         String[] splittedString = deonticsOntologyCoding.split(":");
-        if (OntologyCodingHandlingDeontics.systemDictionary.containsKey(splittedString[0])) {
-            this.coding.setSystem(OntologyCodingHandlingDeontics.systemDictionary.get(splittedString[0]));
+        if (splittedString.length < 2) {
+
+        } else {
+            if (OntologyCodingHandlingDeontics.systemDictionary.containsKey(splittedString[0])) {
+                this.coding.setSystem(OntologyCodingHandlingDeontics.systemDictionary.get(splittedString[0]));
+            }
+            splittedString = splittedString[1].split(" ");
+            this.coding.setCode(splittedString[0]);
+            if (splittedString.length > 1)
+                this.coding.setDisplay(splittedString[1]);
         }
-        this.coding.setCode(splittedString[1].split(" ")[0]);
     }
 
     public String getCode() {
