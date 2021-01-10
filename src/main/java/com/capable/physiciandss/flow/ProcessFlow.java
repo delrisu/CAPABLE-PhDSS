@@ -24,7 +24,11 @@ public class ProcessFlow {
     private final HapiRequestService hapiRequestService = new HapiRequestService();
     private final DeonticsRequestService deonticsRequestService = new DeonticsRequestService();
 
-    public void CheckCommunications() {
+    public void startProcessFlow() {
+        this.CheckCommunications();
+    }
+
+    private void CheckCommunications() {
         ArrayList<Communication> communicationList = (ArrayList<Communication>) hapiRequestService
                 .getCommunicationList(Communication.CommunicationStatus.INPROGRESS);
         if (!communicationList.isEmpty()) {

@@ -19,7 +19,7 @@ public class ScheduledTasks extends com.capable.physiciandss.flow.ProcessFlow {
     @Async
     public void checkForDataToProcess() {
         log.info(Constants.SCHEDULER_TASK_INFO);
-        new ProcessFlow().CheckCommunications();
+        new ProcessFlow().startProcessFlow();
     }
 
 
