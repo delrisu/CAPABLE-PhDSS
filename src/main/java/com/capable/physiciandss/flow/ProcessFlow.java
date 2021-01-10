@@ -53,6 +53,17 @@ public class ProcessFlow {
             Reference payloadResourceReference = communication.getPayload().get(0).getContentReference();
             Optional<String> patientId;
             switch (payloadType) {
+                case "Observation":
+                    patientId = Optional.ofNullable(hapiRequestService.
+                            getObservation(payloadResourceReference.getReference()).
+                            getSubject().
+                            getReference());
+                    log.debug("Found new observation for patient with id: " + patientId);
+                    if (patientId.isPresent() && !alreadyProcessedPatients.contains(patientId.get())) {
+                        alreadyProcessedPatients.add(patientId.get());
+                        patientId.ifPresent(this::handlePatient);
+                    }
+                    break;
                 case "MedicationRequest":
                     patientId = Optional.ofNullable(hapiRequestService.
                             getMedicationRequest(payloadResourceReference.getReference()).
