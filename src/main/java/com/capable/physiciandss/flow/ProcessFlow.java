@@ -39,41 +39,44 @@ public class ProcessFlow {
                             ));
 
             Set<String> alreadyProcessedPatients = new HashSet<>();
-            communicationList.forEach(communication ->
-            {
-                if (!communication.getPayload().isEmpty()) {
-                    String payloadType = communication.getPayload().get(0).getContentReference().getType();
-                    Reference payloadResourceReference = communication.getPayload().get(0).getContentReference();
-                    Optional<String> patientId;
-                    switch (payloadType) {
-                        case "MedicationRequest":
-                            patientId = Optional.ofNullable(hapiRequestService.
-                                    getMedicationRequest(payloadResourceReference.getReference()).
-                                    getSubject().
-                                    getReference());
-                            log.debug("Found change in Medication Request for patient with id: " + patientId);
-                            if (patientId.isPresent() && !alreadyProcessedPatients.contains(patientId.get())) {
-                                alreadyProcessedPatients.add(patientId.get());
-                                patientId.ifPresent(this::handlePatient);
-                            }
-                            break;
-                        case "Patient":
-                            patientId = Optional.of(payloadResourceReference.getReference());
-                            if (!alreadyProcessedPatients.contains(patientId.get())) {
-                                log.debug("Found information about new Patient with id: " + patientId);
-                                alreadyProcessedPatients.add(patientId.get());
-                                patientId.ifPresent(this::handleNewPatient);
-                            }
-                            break;
-                        default:
-                            log.debug(SCHEDULER_TASK_BAD_PAYLOAD_TYPE);
-                    }
-                } else {
-                    log.debug("Payload is missing");
-                }
-            });
+            for (Communication communication : communicationList) {
+                handleCommunication(alreadyProcessedPatients, communication);
+            }
         } else {
             log.debug("There isn't any data to process");
+        }
+    }
+
+    private void handleCommunication(Set<String> alreadyProcessedPatients, Communication communication) {
+        if (!communication.getPayload().isEmpty()) {
+            String payloadType = communication.getPayload().get(0).getContentReference().getType();
+            Reference payloadResourceReference = communication.getPayload().get(0).getContentReference();
+            Optional<String> patientId;
+            switch (payloadType) {
+                case "MedicationRequest":
+                    patientId = Optional.ofNullable(hapiRequestService.
+                            getMedicationRequest(payloadResourceReference.getReference()).
+                            getSubject().
+                            getReference());
+                    log.debug("Found change in Medication Request for patient with id: " + patientId);
+                    if (patientId.isPresent() && !alreadyProcessedPatients.contains(patientId.get())) {
+                        alreadyProcessedPatients.add(patientId.get());
+                        patientId.ifPresent(this::handlePatient);
+                    }
+                    break;
+                case "Patient":
+                    patientId = Optional.of(payloadResourceReference.getReference());
+                    if (!alreadyProcessedPatients.contains(patientId.get())) {
+                        log.debug("Found information about new Patient with id: " + patientId);
+                        alreadyProcessedPatients.add(patientId.get());
+                        patientId.ifPresent(this::handleNewPatient);
+                    }
+                    break;
+                default:
+                    log.debug(SCHEDULER_TASK_BAD_PAYLOAD_TYPE);
+            }
+        } else {
+            log.debug("Payload is missing");
         }
     }
 
@@ -151,7 +154,8 @@ public class ProcessFlow {
                 });
     }
 
-    private void handleTask(String enactmentId, String patientId, PlanTask[] tasks, String dreSessionId, PlanTask task) {
+    private void handleTask(String enactmentId, String patientId, PlanTask[] tasks,
+                            String dreSessionId, PlanTask task) {
         switch (task.getType()) {
             case DEONTICS_ENQUIRY_TASK_TYPE:
                 log.debug("Found " + DEONTICS_ENQUIRY_TASK_TYPE + " task to process");
@@ -167,43 +171,48 @@ public class ProcessFlow {
         }
     }
 
-    private void handleEnquiryTask(String enactmentId, PlanTask task, PlanTask[] tasks, String dreSessionId, String patientId) {
+    private void handleEnquiryTask(String enactmentId, PlanTask task, PlanTask[] tasks,
+                                   String dreSessionId, String patientId) {
         deonticsRequestService
                 .getData(task.getName(), dreSessionId)
                 .subscribe(itemDataList -> {
                     HashMap<String, String> dataItemToValueMap = new HashMap<>();
                     for (ItemData itemData : itemDataList) {
-                        Optional<String> value;
-                        JsonNode metaProperties = itemData.getMetaprops();
-                        if (metaProperties.findValue("source") != null) {
-                            switch (metaProperties.get("source").asText()) {
-                                case "stored":
-                                    log.debug("Found stored data item to process");
-                                    value = handleStoredData(itemData, patientId);
-                                    break;
-                                case "abstracted":
-                                    log.debug("Found abstracted data item to process");
-                                    value = handleAbstractedData(itemData, patientId);
-                                    break;
-                                case "reported":
-                                    log.debug("Found reported data item to process");
-                                    value = handleReportedData(itemData, patientId);
-                                    break;
-                                default:
-                                    log.debug("Unknown source type  in enquiry task");
-                                    value = Optional.empty();
-                                    break;
-                            }
-                            value.ifPresent(s -> dataItemToValueMap.put(itemData.getName(), s));
-                        } else {
-                            log.debug("Missing source node in enquiry task");
-                        }
+                        Optional<String> value = handleItemData(patientId, itemData);
+                        value.ifPresent(s -> dataItemToValueMap.put(itemData.getName(), s));
                     }
                     deonticsRequestService.putDataValues(dataItemToValueMap, dreSessionId).subscribe(
                             dataValuesOutput -> tryToFinishTask(enactmentId, task, tasks, dreSessionId, patientId)
                     );
                 }, getDataException -> {
                 });
+    }
+
+    private Optional<String> handleItemData(String patientId, ItemData itemData) {
+        Optional<String> value = Optional.empty();
+        JsonNode metaProperties = itemData.getMetaprops();
+        if (metaProperties.findValue("source") != null) {
+            switch (metaProperties.get("source").asText()) {
+                case "stored":
+                    log.debug("Found stored data item to process");
+                    value = handleStoredData(itemData, patientId);
+                    break;
+                case "abstracted":
+                    log.debug("Found abstracted data item to process");
+                    value = handleAbstractedData(itemData, patientId);
+                    break;
+                case "reported":
+                    log.debug("Found reported data item to process");
+                    value = handleReportedData(itemData, patientId);
+                    break;
+                default:
+                    log.debug("Unknown source type  in enquiry task");
+                    break;
+            }
+        } else {
+            log.debug("Missing source node in enquiry task");
+        }
+        return value;
     }
 
     private Optional<String> handleReportedData(ItemData itemData,
@@ -238,20 +247,24 @@ public class ProcessFlow {
                 }
             }
             if (!ifTaskAlreadyExists) {
-                log.debug("Task with given code doesnt exist in handling reported data\"");
-                Coding coding = ontologyCoding.getCoding();
-                String observationId = hapiRequestService
-                        .createObservation(coding.getSystem(), coding.getCode(), Observation.ObservationStatus.PRELIMINARY);
-                hapiRequestService
-                        .createTask(new ReferenceHandling(patientId).getReference(), new ReferenceHandling(observationId).getReference());
-                hapiRequestService
-                        .createCommunication(Communication.CommunicationStatus.PREPARATION, observationId);
-                log.debug("Put communication resource with reference at medication request in HAPI FHIR");
+                ifReportedDataTaskDoesntExist(patientId, ontologyCoding);
             }
         } else {
             log.debug("Missing ontology.coding in metaProperties in handling reported data");
         }
         return Optional.empty();
+    }
+
+    private void ifReportedDataTaskDoesntExist(String patientId, OntologyCodingHandlingDeontics ontologyCoding) {
+        log.debug("Task with given code doesnt exist in handling reported data\"");
+        Coding coding = ontologyCoding.getCoding();
+        String observationId = hapiRequestService
+                .createObservation(coding.getSystem(), coding.getCode(), Observation.ObservationStatus.PRELIMINARY);
+        hapiRequestService
+                .createTask(new ReferenceHandling(patientId).getReference(), new ReferenceHandling(observationId).getReference());
+        hapiRequestService
+                .createCommunication(Communication.CommunicationStatus.PREPARATION, observationId);
+        log.debug("Put communication resource with reference at medication request in HAPI FHIR");
     }
 
     private Optional<String> handleAbstractedData(ItemData itemData, String patientId) {
@@ -393,7 +406,8 @@ public class ProcessFlow {
         return Optional.of(valueQuantity);
     }
 
-    private void handleActionTask(String enactmentId, PlanTask task, PlanTask[] tasks, String dreSessionId, String patientId) {
+    private void handleActionTask(String enactmentId, PlanTask task, PlanTask[] tasks,
+                                  String dreSessionId, String patientId) {
         JsonNode metaProperties = task.getMetaprops();
         if (metaProperties.findValue("interactive") != null) {
             switch (metaProperties.get("interactive").asText()) {
@@ -414,7 +428,8 @@ public class ProcessFlow {
         }
     }
 
-    private void handleInteractiveTask(String enactmentId, PlanTask task, PlanTask[] tasks, String patientId, String dreSessionId) {
+    private void handleInteractiveTask(String enactmentId, PlanTask task, PlanTask[] tasks,
+                                       String patientId, String dreSessionId) {
         JsonNode metaProperties = task.getMetaprops();
         if (metaProperties.findValue("resourceType") != null) {
             if ("MedicationRequest".equals(metaProperties.get("resourceType").asText())) {
@@ -426,7 +441,8 @@ public class ProcessFlow {
         }
     }
 
-    private void handleInteractiveMedicationRequest(String enactmentId, PlanTask currentProcessedTask, PlanTask[] currentlyProcessedTasks, String patientId,
+    private void handleInteractiveMedicationRequest(String enactmentId, PlanTask currentProcessedTask,
+                                                    PlanTask[] currentlyProcessedTasks, String patientId,
                                                     String dreSessionId, JsonNode metaProperties) {
         if (metaProperties.findValue("resource") != null) {
             MedicationRequest medicationRequest = FhirContext.forR4().newJsonParser()
@@ -458,22 +474,27 @@ public class ProcessFlow {
                 }
             }
             if (!ifTaskAlreadyExists) {
-                log.debug("Task with given code doesnt exist in InteractiveMedicationRequest Task");
-                String medicationRequestId = hapiRequestService
-                        .createMedicationRequest(medicationRequest, MedicationRequest.MedicationRequestStatus.DRAFT,
-                                MedicationRequest.MedicationRequestIntent.PROPOSAL, patientId);
-                hapiRequestService
-                        .createTask(new ReferenceHandling(patientId).getReference(), new ReferenceHandling(medicationRequestId).getReference());
-                hapiRequestService
-                        .createCommunication(Communication.CommunicationStatus.PREPARATION, medicationRequestId);
-                log.debug("Put communication resource with reference at medication request in HAPI FHIR");
+                ifInteractiveMedicationRequestTaskDoesntExist(patientId, medicationRequest);
             }
         } else {
             log.debug("Missing resource Node in InteractiveMedicationRequest Task");
         }
     }
 
-    private void handleAutomaticTask(String enactmentId, PlanTask task, PlanTask[] tasks, String procedure, String patientId, String dreSessionId) {
+    private void ifInteractiveMedicationRequestTaskDoesntExist(String patientId, MedicationRequest medicationRequest) {
+        log.debug("Task with given code doesnt exist in InteractiveMedicationRequest Task");
+        String medicationRequestId = hapiRequestService
+                .createMedicationRequest(medicationRequest, MedicationRequest.MedicationRequestStatus.DRAFT,
+                        MedicationRequest.MedicationRequestIntent.PROPOSAL, patientId);
+        hapiRequestService
+                .createTask(new ReferenceHandling(patientId).getReference(), new ReferenceHandling(medicationRequestId).getReference());
+        hapiRequestService
+                .createCommunication(Communication.CommunicationStatus.PREPARATION, medicationRequestId);
+        log.debug("Put communication resource with reference at medication request in HAPI FHIR");
+    }
+
+    private void handleAutomaticTask(String enactmentId, PlanTask task, PlanTask[] tasks, String procedure,
+                                     String patientId, String dreSessionId) {
         deonticsRequestService
                 .postEnact(procedure + ".pf", patientId)
                 .subscribe(postEnactResult ->
@@ -489,7 +510,8 @@ public class ProcessFlow {
                 });
     }
 
-    private void tryToFinishTask(String enactmentId, PlanTask planTask, PlanTask[] currentlyProcessedTasks, String dreSessionId, String patientId) {
+    private void tryToFinishTask(String enactmentId, PlanTask planTask, PlanTask[] currentlyProcessedTasks,
+                                 String dreSessionId, String patientId) {
         deonticsRequestService
                 .getQueryConfirmTask(planTask.getName(), dreSessionId)
                 .subscribe(queryConfirmTask -> {
