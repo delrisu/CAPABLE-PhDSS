@@ -361,7 +361,7 @@ public class ProcessFlow {
                 .getMedicationRequestList(patientId, SNOMED_CODING_HAPI, SUNITIB_CODE, MedicationRequest.MedicationRequestStatus.ACTIVE);
         medicationRequests.addAll(hapiRequestService
                 .getMedicationRequestList(patientId, SNOMED_CODING_HAPI, NIVOLUMAB_CODE, MedicationRequest.MedicationRequestStatus.ACTIVE));
-        if (Utils.GetNewestMedicationRequestFromList(medicationRequests).isPresent())
+        if (Utils.getNewestMedicationRequestFromList(medicationRequests).isPresent())
             itemDataValue = "1";
         return Optional.of(itemDataValue);
 
@@ -397,7 +397,7 @@ public class ProcessFlow {
         ArrayList<MedicationRequest> medicationRequests = (ArrayList<MedicationRequest>) hapiRequestService.
                 getMedicationRequestList(patientId, system, code, MedicationRequest.MedicationRequestStatus.ACTIVE);
         Optional<MedicationRequest> medicationRequest =
-                Utils.GetNewestMedicationRequestFromList(medicationRequests);
+                Utils.getNewestMedicationRequestFromList(medicationRequests);
         String value = "0";
         if (medicationRequest.isPresent()) {
             value = "1";
@@ -409,7 +409,7 @@ public class ProcessFlow {
     private Optional<String> handleStoredObservationData(String patientId, String system, String code) {
         ArrayList<Observation> observations = (ArrayList<Observation>) hapiRequestService.
                 getObservationList(patientId, system, code);
-        Optional<Observation> observation = Utils.GetNewestObservationFromList(observations);
+        Optional<Observation> observation = Utils.getNewestObservationFromList(observations);
         String valueQuantity = "";
         if (observation.isPresent()) {
             valueQuantity = observation.get().getValueQuantity().getValue().toPlainString();

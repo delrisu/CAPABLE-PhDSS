@@ -40,7 +40,7 @@ public class Utils {
         return yesterdayDate;
     }
 
-    public static Optional<MedicationRequest> GetNewestMedicationRequestFromList
+    public static Optional<MedicationRequest> getNewestMedicationRequestFromList
             (ArrayList<MedicationRequest> medicationRequests) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern(HAPI_DATETIMETYPE_FORMAT_MR);
         if (medicationRequests.size() == 0)
@@ -61,7 +61,7 @@ public class Utils {
         }
     }
 
-    public static Optional<Observation> GetNewestObservationFromList
+    public static Optional<Observation> getNewestObservationFromList
             (ArrayList<Observation> observations) {
         if (observations.size() == 0)
             return Optional.empty();
