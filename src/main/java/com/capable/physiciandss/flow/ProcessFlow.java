@@ -32,6 +32,7 @@ public class ProcessFlow {
         ArrayList<Communication> communicationList = (ArrayList<Communication>) hapiRequestService
                 .getCommunicationList(Communication.CommunicationStatus.INPROGRESS);
         if (!communicationList.isEmpty()) {
+            log.debug("[CheckCommunications]\tThere is some data to process!");
             communicationList.forEach(
                     communication -> hapiRequestService
                             .updateCommunication(
@@ -43,7 +44,7 @@ public class ProcessFlow {
                 handleCommunication(alreadyProcessedPatients, communication);
             }
         } else {
-            log.debug("There isn't any data to process");
+            log.debug("[CheckCommunications]\tThere isn't any data to process!");
         }
     }
 
@@ -58,7 +59,7 @@ public class ProcessFlow {
                             getObservation(payloadResourceReference.getReference()).
                             getSubject().
                             getReference());
-                    log.debug("Found new observation for patient with id: " + patientId);
+                    log.debug("[handleCommunication]\tFound new observation for patient with id: " + patientId);
                     if (patientId.isPresent() && !alreadyProcessedPatients.contains(patientId.get())) {
                         alreadyProcessedPatients.add(patientId.get());
                         patientId.ifPresent(this::handlePatient);
@@ -69,7 +70,7 @@ public class ProcessFlow {
                             getMedicationRequest(payloadResourceReference.getReference()).
                             getSubject().
                             getReference());
-                    log.debug("Found change in Medication Request for patient with id: " + patientId);
+                    log.debug("[handleCommunication]\tFound change in Medication Request for patient with id: " + patientId);
                     if (patientId.isPresent() && !alreadyProcessedPatients.contains(patientId.get())) {
                         alreadyProcessedPatients.add(patientId.get());
                         patientId.ifPresent(this::handlePatient);
@@ -78,7 +79,7 @@ public class ProcessFlow {
                 case "Patient":
                     patientId = Optional.of(payloadResourceReference.getReference());
                     if (!alreadyProcessedPatients.contains(patientId.get())) {
-                        log.debug("Found information about new Patient with id: " + patientId);
+                        log.debug("[handleCommunication]\tFound information about new Patient with id: " + patientId);
                         alreadyProcessedPatients.add(patientId.get());
                         patientId.ifPresent(this::handleNewPatient);
                     }
@@ -87,7 +88,7 @@ public class ProcessFlow {
                     log.debug(SCHEDULER_TASK_BAD_PAYLOAD_TYPE);
             }
         } else {
-            log.debug("Payload is missing");
+            log.debug("[handleCommunication]\tPayload is missing");
         }
     }
 
@@ -96,7 +97,7 @@ public class ProcessFlow {
                 .getPathwayByName(META_GUIDELINE_NAME)
                 .subscribe(pathways -> {
                     if (pathways.length < 1) {
-                        log.debug("Meta guideline is missing");
+                        log.debug("[handleNewPatient]\tMeta guideline is missing");
                     } else {
                         deonticsRequestService
                                 .postEnact(META_GUIDELINE_NAME + ".pf", patientId)
@@ -148,9 +149,9 @@ public class ProcessFlow {
                                 .subscribe(
                                         enactmentDeleteOutput -> {
                                             if (enactmentDeleteOutput.getDeleted().equals("true")) {
-                                                log.debug("Enactment was deleted");
+                                                log.debug("[handleTasks]\tEnactment was deleted");
                                             } else {
-                                                log.debug("Deletion of Enactment was unsuccessful");
+                                                log.debug("[handleTasks]\tDeletion of Enactment was unsuccessful");
                                             }
                                         }, enactmentDeleteException -> {
                                         });
@@ -169,15 +170,15 @@ public class ProcessFlow {
                             String dreSessionId, PlanTask task) {
         switch (task.getType()) {
             case DEONTICS_ENQUIRY_TASK_TYPE:
-                log.debug("Found " + DEONTICS_ENQUIRY_TASK_TYPE + " task to process");
+                log.debug("[handleTask]\tFound " + DEONTICS_ENQUIRY_TASK_TYPE + " task to process");
                 handleEnquiryTask(enactmentId, task, tasks, dreSessionId, patientId);
                 break;
             case DEONTICS_ACTION_TASK_TYPE:
-                log.debug("Found " + DEONTICS_ACTION_TASK_TYPE + " task to process");
+                log.debug("[handleTask]\tFound " + DEONTICS_ACTION_TASK_TYPE + " task to process");
                 handleActionTask(enactmentId, task, tasks, dreSessionId, patientId);
                 break;
             default:
-                log.info(SCHEDULER_TASK_BAD_DEONTIC_TASKS_TYPE);
+                log.debug("[handleTask]\t" + SCHEDULER_TASK_BAD_DEONTIC_TASKS_TYPE);
                 break;
         }
     }
@@ -205,23 +206,23 @@ public class ProcessFlow {
         if (metaProperties.findValue("source") != null) {
             switch (metaProperties.get("source").asText()) {
                 case "stored":
-                    log.debug("Found stored data item to process");
+                    log.debug("[handleItemData]\tFound stored data item to process");
                     value = handleStoredData(itemData, patientId);
                     break;
                 case "abstracted":
-                    log.debug("Found abstracted data item to process");
+                    log.debug("[handleItemData]\tFound abstracted data item to process");
                     value = handleAbstractedData(itemData, patientId);
                     break;
                 case "reported":
-                    log.debug("Found reported data item to process");
+                    log.debug("[handleItemData]\tFound reported data item to process");
                     value = handleReportedData(itemData, patientId);
                     break;
                 default:
-                    log.debug("Unknown source type  in enquiry task");
+                    log.debug("[handleItemData]\tUnknown source type");
                     break;
             }
         } else {
-            log.debug("Missing source node in enquiry task");
+            log.debug("[handleItemData]\tMissing source node");
         }
         return value;
     }
@@ -245,10 +246,10 @@ public class ProcessFlow {
                                 observationCoding.getCode(), ontologyCoding_.getCode(),
                                 observationCoding.getSystem(), ontologyCoding_.getSystem()
                         )) {
-                            log.debug("Task with given code already exist in handling reported data\"");
+                            log.debug("[handleReportedData]\tTask with given code already exist");
                             ifTaskAlreadyExists = true;
                             if (observation.getStatus().equals(Observation.ObservationStatus.REGISTERED)) {
-                                log.debug("Observation affiliated with task has been filled in handling reported data\"");
+                                log.debug("[handleReportedData]\tObservation affiliated with task has been filled");
                                 hapiRequestService.updateTask(task, Task.TaskStatus.COMPLETED);
                                 return Optional.of(observation.getValueQuantity().getValue().toPlainString());
                             }
@@ -261,13 +262,13 @@ public class ProcessFlow {
                 ifReportedDataTaskDoesntExist(patientId, ontologyCoding);
             }
         } else {
-            log.debug("Missing ontology.coding in metaProperties in handling reported data");
+            log.debug("[handleReportedData]\tMissing ontology.coding in metaProperties");
         }
         return Optional.empty();
     }
 
     private void ifReportedDataTaskDoesntExist(String patientId, OntologyCodingHandlingDeontics ontologyCoding) {
-        log.debug("Task with given code doesnt exist in handling reported data\"");
+        log.debug("[ifReportedDataTaskDoesntExist]\tTask with given code doesnt exist");
         Coding coding = ontologyCoding.getCoding();
         String observationId = hapiRequestService
                 .createObservation(coding.getSystem(), coding.getCode(), Observation.ObservationStatus.PRELIMINARY);
@@ -275,7 +276,7 @@ public class ProcessFlow {
                 .createTask(new ReferenceHandling(patientId).getReference(), new ReferenceHandling(observationId).getReference());
         hapiRequestService
                 .createCommunication(Communication.CommunicationStatus.PREPARATION, observationId);
-        log.debug("Put communication resource with reference at medication request in HAPI FHIR");
+        log.debug("[ifReportedDataTaskDoesntExist]\tPut communication resource with reference at medication request in HAPI FHIR");
     }
 
     private Optional<String> handleAbstractedData(ItemData itemData, String patientId) {
@@ -290,25 +291,25 @@ public class ProcessFlow {
             if (SNOMED_CODING_HAPI.equals(codingHandling.getSystem())) {
                 switch (codingHandling.getCode()) {
                     case IMMUNOTHERAPY_CODE:
-                        log.debug("Found immunotherapy case for patient with id: " + patientId);
+                        log.debug("[handleAbstractedData]\tFound immunotherapy case for patient with id: " + patientId);
                         return handleOnImmunotherapy(patientId, itemDataValue);
                     case COMPLICATED_DIARRHEA_CODE:
-                        log.debug("Found complicated diarrhea case for patient with id: " + patientId);
+                        log.debug("[handleAbstractedData]\tFound complicated diarrhea case for patient with id: " + patientId);
                         return handleComplicatedDiarrhea(patientId, itemDataValue,
                                 yesterdayDate);
                     case PERSISTENT_DIARRHEA_CODE:
-                        log.debug("Found persistent diarrhea case for patient with id: " + patientId);
+                        log.debug("[handleAbstractedData]\tFound persistent diarrhea case for patient with id: " + patientId);
                         return handlePersistentDiarrhea(patientId, itemDataValue,
                                 yesterdayDate, twoDaysAgoDate, threeDaysAgoDate);
                     default:
-                        log.debug("Unknown code value in handling abstracted data");
+                        log.debug("[handleAbstractedData]\tUnknown code value");
                         break;
                 }
             } else {
-                log.debug("Unknown coding system in handling abstracted data");
+                log.debug("[handleAbstractedData]\tUnknown coding system");
             }
         } else {
-            log.debug("Missing ontology.coding in metaProperties in handling abstracted data");
+            log.debug("[handleAbstractedData]\tMissing ontology.coding in metaProperties");
         }
         return Optional.empty();
     }
@@ -376,19 +377,19 @@ public class ProcessFlow {
                 OntologyCodingHandlingDeontics codingHandling = new OntologyCodingHandlingDeontics(ontologyCoding);
                 switch (metaProperties.get("resourceType").asText()) {
                     case "Observation":
-                        log.debug("Checking observation for essential data - patient id: " + patientId);
+                        log.debug("[handleStoredData]\tChecking observation for essential data - patient id: " + patientId);
                         return handleStoredObservationData(patientId,
                                 codingHandling.getSystem(), codingHandling.getCode());
                     case "MedicationRequest":
-                        log.debug("Checking medication request for essential data  - patient id: " + patientId);
+                        log.debug("[handleStoredData]\tChecking medication request for essential data  - patient id: " + patientId);
                         return handleStoredMedicationRequestData(patientId,
                                 codingHandling.getSystem(), codingHandling.getCode());
                 }
             } else {
-                log.debug("Missing ontology.coding in metaProperties in handling stored data");
+                log.debug("[handleStoredData]\tMissing ontology.coding in metaProperties");
             }
         } else {
-            log.debug("Missing resourceType in metaProperties in handling stored data");
+            log.debug("[handleStoredData]\tMissing resourceType in metaProperties");
         }
         return Optional.empty();
     }
@@ -423,19 +424,19 @@ public class ProcessFlow {
         if (metaProperties.findValue("interactive") != null) {
             switch (metaProperties.get("interactive").asText()) {
                 case "0":
-                    log.debug("Found automatic task to process for patient with id: " + patientId);
+                    log.debug("[handleActionTask]\tFound automatic task to process for patient with id: " + patientId);
                     handleAutomaticTask(enactmentId, task, tasks, task.getProcedure(), patientId, dreSessionId);
                     break;
                 case "1":
-                    log.debug("Found interactive task to process for patient with id: " + patientId);
+                    log.debug("[handleActionTask]\tFound interactive task to process for patient with id: " + patientId);
                     handleInteractiveTask(enactmentId, task, tasks, patientId, dreSessionId);
                     break;
                 default:
-                    log.debug("Wrong interactive value  in Action task");
+                    log.debug("[handleActionTask]\tWrong interactive value");
                     break;
             }
         } else {
-            log.debug("Missing interactive node in Action task");
+            log.debug("[handleActionTask]\tMissing interactive node");
         }
     }
 
@@ -444,10 +445,10 @@ public class ProcessFlow {
         JsonNode metaProperties = task.getMetaprops();
         if (metaProperties.findValue("resourceType") != null) {
             if ("MedicationRequest".equals(metaProperties.get("resourceType").asText())) {
-                log.debug("Found interactiveMedicationRequest task: " + patientId);
+                log.debug("[handleInteractiveTask]\tFound interactiveMedicationRequest task: " + patientId);
                 handleInteractiveMedicationRequest(enactmentId, task, tasks, patientId, dreSessionId, metaProperties);
             } else {
-                log.debug("Wrong resourceType value in interactive task");
+                log.debug("[handleInteractiveTask]\rWrong resourceType value");
             }
         }
     }
@@ -469,13 +470,13 @@ public class ProcessFlow {
                         Coding mRCoding = medicationRequest.getMedicationCodeableConcept().getCodingFirstRep();
                         if (Utils.isCodingMatching(taskMrCoding.getCode(), mRCoding.getCode(),
                                 mRCoding.getSystem(), taskMrCoding.getSystem())) {
-                            log.debug("Task with given code already exist in InteractiveMedicationRequest Task");
+                            log.debug("[handleInteractiveMedicationRequest]\tTask with given code already exist in InteractiveMedicationRequest Task");
                             ifTaskAlreadyExists = true;
                             if (mR.getStatus()
                                     .equals(MedicationRequest.MedicationRequestStatus.ACTIVE)
                                     || mR.getStatus()
                                     .equals(MedicationRequest.MedicationRequestStatus.CANCELLED)) {
-                                log.debug("Medication request affiliated with task has been activated in InteractiveMedicationRequest Task");
+                                log.debug("[handleInteractiveMedicationRequest]\tMedication request affiliated with task has been activated in InteractiveMedicationRequest Task");
                                 hapiRequestService.updateTask(task, Task.TaskStatus.COMPLETED);
                                 tryToFinishTask(enactmentId, currentProcessedTask, currentlyProcessedTasks, dreSessionId, patientId);
                             }
@@ -488,12 +489,12 @@ public class ProcessFlow {
                 ifInteractiveMedicationRequestTaskDoesntExist(patientId, medicationRequest);
             }
         } else {
-            log.debug("Missing resource Node in InteractiveMedicationRequest Task");
+            log.debug("[handleInteractiveMedicationRequest]\tMissing resource Node");
         }
     }
 
     private void ifInteractiveMedicationRequestTaskDoesntExist(String patientId, MedicationRequest medicationRequest) {
-        log.debug("Task with given code doesnt exist in InteractiveMedicationRequest Task");
+        log.debug("[ifInteractiveMedicationRequestTaskDoesntExist]\tTask with given code doesnt exist");
         String medicationRequestId = hapiRequestService
                 .createMedicationRequest(medicationRequest, MedicationRequest.MedicationRequestStatus.DRAFT,
                         MedicationRequest.MedicationRequestIntent.PROPOSAL, patientId);
@@ -501,7 +502,7 @@ public class ProcessFlow {
                 .createTask(new ReferenceHandling(patientId).getReference(), new ReferenceHandling(medicationRequestId).getReference());
         hapiRequestService
                 .createCommunication(Communication.CommunicationStatus.PREPARATION, medicationRequestId);
-        log.debug("Put communication resource with reference at medication request in HAPI FHIR");
+        log.debug("[ifInteractiveMedicationRequestTaskDoesntExist]\tPut communication resource with reference at medication request in HAPI FHIR");
     }
 
     private void handleAutomaticTask(String enactmentId, PlanTask task, PlanTask[] tasks, String procedure,
@@ -512,7 +513,7 @@ public class ProcessFlow {
                         deonticsRequestService
                                 .getEnactmentsByEnactmentId(postEnactResult.getEnactmentid())
                                 .subscribe(enactments -> {
-                                    log.debug("Started new enact for currently processed patient with id: " +
+                                    log.debug("[handleAutomaticTask]\tStarted new enactment for currently processed patient with id: " +
                                             patientId + " new pathway: " + procedure);
                                     handleEnactment(enactments[0], patientId);
                                     tryToFinishTask(enactmentId, task, tasks, dreSessionId, patientId);
@@ -531,9 +532,9 @@ public class ProcessFlow {
                                 .putConfirmTask(planTask.getName(), dreSessionId)
                                 .subscribe(confirmTaskOutput -> {
                                     if (!confirmTaskOutput.getState().equals("completed")) {
-                                        log.debug("Cannot complete task");
+                                        log.debug("[tryToFinishTask]\tCannot complete task");
                                     } else {
-                                        log.debug("Task has been completed for patient with id: " + patientId);
+                                        log.debug("[tryToFinishTask]\tTask has been completed for patient with id: " + patientId);
                                         deonticsRequestService
                                                 .getPlanTasks(DEONTICS_IN_PROGRESS_STATUS, dreSessionId)
                                                 .subscribe(tasks -> handleTasks(enactmentId, patientId, dreSessionId, Optional.of(currentlyProcessedTasks)));
@@ -541,7 +542,7 @@ public class ProcessFlow {
                                 }, confirmTaskException -> {
                                 });
                     } else {
-                        log.debug("Cannot finish task,\nReasons:" + queryConfirmTask.toString());
+                        log.debug("[tryToFinishTask]\tCannot finish task\nReasons:" + queryConfirmTask.toString());
                     }
                 }, queryConfirmTaskException -> {
                 });
