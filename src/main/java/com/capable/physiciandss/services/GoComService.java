@@ -4,6 +4,7 @@ import com.capable.physiciandss.configuration.WebClientConfig;
 import com.capable.physiciandss.model.gocom.Ping;
 import com.capable.physiciandss.model.gocom.PingResponse;
 import com.capable.physiciandss.utils.Constants;
+import org.hl7.fhir.r4.model.Reference;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
@@ -11,8 +12,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
-
-import java.lang.ref.Reference;
 
 @Service
 public class GoComService extends RootService {
