@@ -503,7 +503,15 @@ public class ProcessFlow {
         hapiRequestService
                 .createTask(new ReferenceHandling(patientId).getReference(), new ReferenceHandling(medicationRequestId).getReference());
         goComService
-                .askGoComToCheckForConflicts(new ReferenceHandling(medicationRequestId).getReference());
+                .askGoComToCheckForConflicts(new ReferenceHandling(medicationRequestId).getReference())
+                .subscribe(pingResponse -> {
+                            if (pingResponse.getIfResolvedConflict()) {
+                                log.debug("[ifInteractiveMedicationRequestTaskDoesntExist]\tGoCom has resolved conflict!");
+                            } else {
+                                log.debug("[ifInteractiveMedicationRequestTaskDoesntExist]\tGoCom hasn't resolved any conflict!");
+                            }
+                        }
+                );
         log.debug("[ifInteractiveMedicationRequestTaskDoesntExist]\tPut communication resource with reference at medication request in HAPI FHIR");
     }
 
