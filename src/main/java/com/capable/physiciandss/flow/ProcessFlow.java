@@ -5,6 +5,7 @@ import com.capable.physiciandss.model.deontics.get.Enactment;
 import com.capable.physiciandss.model.deontics.get.ItemData;
 import com.capable.physiciandss.model.deontics.get.PlanTask;
 import com.capable.physiciandss.services.DeonticsRequestService;
+import com.capable.physiciandss.services.GoComService;
 import com.capable.physiciandss.services.HapiRequestService;
 import com.capable.physiciandss.utils.OntologyCodingHandlingDeontics;
 import com.capable.physiciandss.utils.ReferenceHandling;
@@ -23,6 +24,7 @@ public class ProcessFlow {
             LoggerFactory.getLogger(ProcessFlow.class);
     private final HapiRequestService hapiRequestService = new HapiRequestService();
     private final DeonticsRequestService deonticsRequestService = new DeonticsRequestService();
+    private final GoComService goComService = new GoComService();
 
     public void startProcessFlow() {
         this.CheckCommunications();
@@ -500,8 +502,8 @@ public class ProcessFlow {
                         MedicationRequest.MedicationRequestIntent.PROPOSAL, patientId);
         hapiRequestService
                 .createTask(new ReferenceHandling(patientId).getReference(), new ReferenceHandling(medicationRequestId).getReference());
-        hapiRequestService
-                .createCommunication(Communication.CommunicationStatus.PREPARATION, medicationRequestId);
+        goComService
+                .askGoComToCheckForConflicts(new ReferenceHandling(medicationRequestId).getReference());
         log.debug("[ifInteractiveMedicationRequestTaskDoesntExist]\tPut communication resource with reference at medication request in HAPI FHIR");
     }
 
