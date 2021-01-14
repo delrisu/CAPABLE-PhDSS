@@ -8,5 +8,5 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class PingResponse {
-    int ifResolvedConflict;
+    boolean ifResolvedConflict;
 }
