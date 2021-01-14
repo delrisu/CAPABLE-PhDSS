@@ -12,6 +12,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
+import java.lang.ref.Reference;
+
 @Service
 public class GoComService extends RootService {
 
@@ -24,10 +26,10 @@ public class GoComService extends RootService {
         log.info("GoComService has been created");
     }
 
-    public Mono<PingResponse> pingGoCom(String patientID) {
+    public Mono<PingResponse> askGoComToCheckForConflicts(Reference medicationRequestReference) {
         return webClient.post()
                 .uri(Constants.GOCOM_BASE_URL + "/Ping")
-                .body(Mono.just(new Ping(patientID)), Ping.class)
+                .body(Mono.just(new Ping(medicationRequestReference)), Ping.class)
                 .retrieve()
                 .onStatus(HttpStatus::isError, response -> onError(response, "PingGoCom"))
                 .onStatus(HttpStatus::is2xxSuccessful, response -> onSuccess("PingGoCom"))

@@ -4,9 +4,11 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.lang.ref.Reference;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 public class Ping {
-    String patientId;
+    Reference medicationRequestReference;
 }
