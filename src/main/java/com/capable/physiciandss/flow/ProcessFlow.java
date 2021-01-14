@@ -505,7 +505,7 @@ public class ProcessFlow {
         goComService
                 .askGoComToCheckForConflicts(new ReferenceHandling(medicationRequestId).getReference())
                 .subscribe(pingResponse -> {
-                            if (pingResponse.getIfResolvedConflict()) {
+                            if (pingResponse.isIfResolvedConflict()) {
                                 log.debug("[ifInteractiveMedicationRequestTaskDoesntExist]\tGoCom has resolved conflict!");
                             } else {
                                 log.debug("[ifInteractiveMedicationRequestTaskDoesntExist]\tGoCom hasn't resolved any conflict!");
