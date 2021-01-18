@@ -13,11 +13,17 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
+/**
+ * Klasa zapewniająca komunikację z komponentem GoCom
+ */
 @Service
 public class GoComService extends RootService {
 
     WebClient webClient;
 
+    /**
+     * Konfiguruje webClient oraz inicjalizuje loggera
+     */
     public GoComService() {
         log = LoggerFactory.getLogger(this.getClass().getName());
         ApplicationContext context = new AnnotationConfigApplicationContext(WebClientConfig.class);
@@ -25,6 +31,10 @@ public class GoComService extends RootService {
         log.info("GoComService has been created");
     }
 
+    /**
+     * @param medicationRequestReference Referencja na receptę dla której chcemy sprawdzić możliwe konflikty
+     * @return Obiekt zawierający informację czy GoCom rozwiązał jakiekolwiek problemy
+     */
     public Mono<PingResponse> askGoComToCheckForConflicts(Reference medicationRequestReference) {
         return webClient.post()
                 .uri(Constants.GOCOM_BASE_URL + "/Ping")
