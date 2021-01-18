@@ -17,6 +17,9 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Klasa zapewniająca komunikacje z platformą danych HAPI FHIR
+ */
 @Service
 public class HapiRequestService {
 
@@ -24,6 +27,10 @@ public class HapiRequestService {
     private final IGenericClient client;
     private final FhirContext ctx;
 
+    /**
+     * Nawiązuje połączenie z platformą danych, z którego następnie korzysta reszta metod z klasy.
+     * Inicjalizuje loggera
+     */
     public HapiRequestService() {
         ApplicationContext context = new AnnotationConfigApplicationContext(HapiConnectionConfig.class);
         client = context.getBean("connection", Connection.class).getClient();
@@ -31,6 +38,10 @@ public class HapiRequestService {
         log.info("HapiRequestService has been created.");
     }
 
+    /**
+     * @param id Identyfikator pacjenta w platformie danych
+     * @return Pacjent o zadanym identyfikatorze
+     */
     public Patient getPatient(String id) {
         log.info("Reading patient with id: " + id);
         return client.read()
@@ -39,6 +50,10 @@ public class HapiRequestService {
                 .execute();
     }
 
+    /**
+     * @param id Identyfikator obserwacji w platformie danych
+     * @return Obserwacja o zadanym identyfikatorze
+     */
     public Observation getObservation(String id) {
         log.info("Reading observation with id: " + id);
         return client.read()
@@ -47,6 +62,10 @@ public class HapiRequestService {
                 .execute();
     }
 
+    /**
+     * @param id Identyfikator komunikacji w platformie danych
+     * @return Komunikacja o zadanym identyfikatorze
+     */
     public Communication getCommunication(String id) {
         log.info("Reading communication with id: " + id);
         return client.read()
@@ -55,6 +74,10 @@ public class HapiRequestService {
                 .execute();
     }
 
+    /**
+     * @param subjectId Identyfikator pacjenta
+     * @return Lista Obserwacji powiązanych z pacjentem o zadanym identyfikatorze
+     */
     public List<Observation> getObservationList(String subjectId) {
         log.info("Getting list of observation for subject with id: " + subjectId);
         Bundle bundle = client
@@ -66,6 +89,13 @@ public class HapiRequestService {
         return getObservations(bundle);
     }
 
+    /**
+     * @param subjectId      Identyfikator pacjenta
+     * @param system         Terminologia systemu
+     * @param ontologyCoding Medyczny byt w zadanej terminologii systemu
+     * @return Lista Obserwacji medycznego bytu, określonego poprzez system oraz ontologyCoding,
+     * powiązanych z pacjentem o zadanym identyfikatorze
+     */
     public List<Observation> getObservationList(String subjectId, String system, String ontologyCoding) {
         log.info("Getting list of observations with system:" + system + ", ontologyCoding: "
                 + ontologyCoding + " for subject with id: " + subjectId);
@@ -79,6 +109,12 @@ public class HapiRequestService {
         return getObservations(bundle);
     }
 
+    /**
+     * Pomocnicza metoda służąca przenoszeniu obiektów z HL7 Bundle do Java List
+     *
+     * @param bundle Paczka z obserwacjami
+     * @return Lista obserwacji uzyskana z paczki
+     */
     private List<Observation> getObservations(Bundle bundle) {
         List<Observation> observations =
                 new ArrayList<>(BundleUtil.toListOfResourcesOfType(ctx, bundle, Observation.class));
@@ -92,6 +128,10 @@ public class HapiRequestService {
         return observations;
     }
 
+    /**
+     * @param id Identyfikator recepty
+     * @return Receptę o zadanym identyfikatorze
+     */
     public MedicationRequest getMedicationRequest(String id) {
         log.info("Reading medicationRequest with id: " + id);
         return client.read()
@@ -100,6 +140,10 @@ public class HapiRequestService {
                 .execute();
     }
 
+    /**
+     * @param subjectId Identyfikator pacjenta
+     * @return Lista recept powiązanych z pacjentem o zadanym identyfikatorze
+     */
     public List<MedicationRequest> getMedicationRequestList(String subjectId) {
         log.info("Getting list of medicationRequests for subject with id: " + subjectId);
         Bundle bundle = client
@@ -111,6 +155,14 @@ public class HapiRequestService {
         return getMedicationRequests(bundle);
     }
 
+    /**
+     * @param subjectId      Identyfikator pacjenta
+     * @param system         Terminologia systemu
+     * @param ontologyCoding Medyczny byt w zadanej terminologii systemu
+     * @param status         Status w jakim ma znajdować się recepta (np. ACTIVE)
+     * @return Lista Obserwacji medycznego bytu, określonego poprzez system oraz ontologyCoding,
+     * powiązanych z pacjentem o zadanym identyfikatorze
+     */
     public List<MedicationRequest> getMedicationRequestList(String subjectId, String system, String ontologyCoding,
                                                             MedicationRequest.MedicationRequestStatus status) {
         log.info("Getting list of medicationRequests with system:" + system + ", ontologyCoding: " + ontologyCoding +
@@ -126,6 +178,12 @@ public class HapiRequestService {
         return getMedicationRequests(bundle);
     }
 
+    /**
+     * Pomocnicza metoda służąca przenoszeniu obiektów z HL7 Bundle do Java List
+     *
+     * @param bundle Paczka z receptami
+     * @return Lista recept uzyskana z paczki
+     */
     private List<MedicationRequest> getMedicationRequests(Bundle bundle) {
         List<MedicationRequest> medicationRequests =
                 new ArrayList<>(BundleUtil.toListOfResourcesOfType(ctx, bundle, MedicationRequest.class));
@@ -139,6 +197,10 @@ public class HapiRequestService {
         return medicationRequests;
     }
 
+    /**
+     * @param status Status w jakim ma znajdywać się Komunikacja (np. PREPARATION)
+     * @return Lista komunikacji z zadaną wartością pola status
+     */
     public List<Communication> getCommunicationList(Communication.CommunicationStatus status) {
         log.info("Getting list of communications with status: " + status.toCode());
         Bundle bundle = client
@@ -160,6 +222,12 @@ public class HapiRequestService {
         return communications;
     }
 
+    /**
+     * @param system         Terminologia systemu
+     * @param ontologyCoding Medyczny byt w zadanej terminologii systemu
+     * @param status         Status z jakim zostanie utworzona obserwacja
+     * @return Referencje na utworzony zasób (np. Observation/1)
+     */
     public String createObservation(String system, String ontologyCoding, Observation.ObservationStatus status) {
         log.info("Creating observation with system: " + system + ", ontologyCoding: " +
                 ontologyCoding + " with status: " + status.toCode());
@@ -181,6 +249,10 @@ public class HapiRequestService {
         return outcome.getId().getResourceType() + '/' + outcome.getId().getIdPart();
     }
 
+    /**
+     * @param observation Istniejąca obserwacja w platformie danych
+     * @param status      Nowa wartość pola status dla zadanej obserwacji
+     */
     public void updateObservation(Observation observation, Observation.ObservationStatus status) {
         log.info("Updating communication status");
         observation.setStatus(status);
@@ -190,6 +262,13 @@ public class HapiRequestService {
         log.debug(outcome.toString());
     }
 
+    /**
+     * @param medicationRequest       Recepta z uzupełnionymi podstawowymi polami tzn. medicationCodeableConcept oraz dosageInstruction
+     * @param status                  Określa status tworzonej recepty
+     * @param medicationRequestIntent Określa w jakim celu została utworzona recepta
+     * @param patientId               Określa dla jakiego pacjenta jest tworzona recepta
+     * @return Referencje na utworzony zasób (np. MedicationRequest/1)
+     */
     public String createMedicationRequest(MedicationRequest medicationRequest,
                                           MedicationRequest.MedicationRequestStatus status,
                                           MedicationRequest.MedicationRequestIntent medicationRequestIntent,
@@ -209,6 +288,11 @@ public class HapiRequestService {
         return outcome.getId().getResourceType() + '/' + outcome.getId().getIdPart();
     }
 
+    /**
+     * @param status      Określa status tworzonej komunikacji
+     * @param referenceId Określa wartość referencji znajdującej się w polu payload tworzonej komunikacji
+     * @return Referencje na utworzony zasób (np. Communication/1)
+     */
     public String createCommunication(Communication.CommunicationStatus status, String referenceId) {
         log.info("Creating communication with status: " + status.toCode() + ", referenceId: " + referenceId);
         Communication communication = new Communication();
@@ -229,6 +313,10 @@ public class HapiRequestService {
         return outcome.getId().getResourceType() + '/' + outcome.getId().getIdPart();
     }
 
+    /**
+     * @param communication Istniejąca komunikacja w platformie danych
+     * @param status        Nowa wartość pola status dla zadanej komunikacji
+     */
     public void updateCommunication(Communication communication, Communication.CommunicationStatus status) {
         log.info("Updating communication status");
         communication.setStatus(status);
@@ -238,6 +326,10 @@ public class HapiRequestService {
         log.debug(outcome.toString());
     }
 
+    /**
+     * @param status Określa status zadań, które będą pobrane z platformy danych
+     * @return Lista zadań o zadanym statusie
+     */
     public List<Task> getTaskList(Task.TaskStatus status) {
         log.info("Getting list of tasks with status: " + status.toCode());
         Bundle bundle = client
@@ -259,6 +351,10 @@ public class HapiRequestService {
         return tasks;
     }
 
+    /**
+     * @param patient  Referencja na pacjenta, która będzie wpisana w pole "For" zadania
+     * @param resource Referencja na zasób powiązany z pacjentem, która będzie wpisana w pole "Focus" zadania
+     */
     public void createTask(Reference patient, Reference resource) {
         Task task = new Task();
         task.setIntent(Task.TaskIntent.ORDER);
@@ -271,6 +367,10 @@ public class HapiRequestService {
         log.debug(outcome.toString());
     }
 
+    /**
+     * @param task   Istniejące zadanie w platformie danych
+     * @param status Nowa wartość pola status dla zadanego zadania
+     */
     public void updateTask(Task task, Task.TaskStatus status) {
         task.setStatus(status);
 
