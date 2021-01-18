@@ -7,6 +7,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 
+/**
+ * Klasa pomocniczna stworzona, aby ułatwić zmianę formatu systemu oraz coding (pole ontology.codings w metaproperties) z wersji Deonticsa na wersję HL7 FHIR.
+ */
 @Data
 public class OntologyCodingHandlingDeontics {
     private static Map<String, String> systemDictionary;
@@ -19,6 +22,9 @@ public class OntologyCodingHandlingDeontics {
     private Coding coding = new Coding();
 
 
+    /**
+     * @param deonticsOntologyCoding Ontology coding zapisany w formacie zgodnym z formatem Deonticsa
+     */
     public OntologyCodingHandlingDeontics(String deonticsOntologyCoding) {
         String[] splittedString = deonticsOntologyCoding.split(":");
         if (splittedString.length < 2) {
@@ -34,10 +40,16 @@ public class OntologyCodingHandlingDeontics {
         }
     }
 
+    /**
+     * @return Kod w formacie zgodnym z formatem HL7 FHIR
+     */
     public String getCode() {
         return coding.getCode();
     }
 
+    /**
+     * @return System w formacie zgodnym z formatem HL7 FHIR
+     */
     public String getSystem() {
         return coding.getSystem();
     }
