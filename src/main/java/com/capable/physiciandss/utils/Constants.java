@@ -1,5 +1,8 @@
 package com.capable.physiciandss.utils;
 
+/**
+ * Klasa zawierające stałe
+ */
 public class Constants {
     //public static final String HAPI_BASE_URL = "http://10.131.46.196:8080/baseR4/";
     public static final String HAPI_BASE_URL = "http://localhost:9000/baseR4/";
