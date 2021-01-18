@@ -14,7 +14,17 @@ import java.util.Optional;
 import static com.capable.physiciandss.utils.Constants.HAPI_DATETIMETYPE_FORMAT_MR;
 import static com.capable.physiciandss.utils.Constants.HAPI_DATETIMETYPE_FORMAT_OBS;
 
+/**
+ * Pomocnicza klasa zawierająca pomocniczne funkcje
+ */
 public class Utils {
+    /**
+     * @param code    Kod pierwszej bytu w zadanym - przez parametr system - systemie
+     * @param code2   Kod drugiego bytu w zadanym - przez parametr system2 - systemie
+     * @param system  Terminologia systemu pierwszego bytu
+     * @param system2 Terminologia systemu drugiego bytu
+     * @return Wartość logiczna określająca równość Coding
+     */
     public static boolean isCodingMatching(String code, String code2, String system, String system2) {
         if (code == null || code2 == null || system == null || system2 == null)
             return false;
@@ -24,6 +34,12 @@ public class Utils {
                 .equals(system2);
     }
 
+    /**
+     * @param Date       Data bazowa
+     * @param firstDate  Pierwsza porównywana data
+     * @param secondDate Druga porównywana data
+     * @return Wartość logiczną określającą czy bazowa data znajduje się pomiędzy dwoma pozostałymi
+     */
     public static boolean isBetweenDates(DateTimeType Date, DateTimeType firstDate, DateTimeType secondDate) {
         if (firstDate.after(secondDate)) {
             return Date.before(firstDate)
@@ -34,14 +50,22 @@ public class Utils {
         }
     }
 
+    /**
+     * @param daysCount Liczba dni
+     * @return Data sprzed daysCount dni
+     */
     public static DateTimeType getDateBeforeCurrentDate(int daysCount) {
         DateTimeType yesterdayDate = new DateTimeType(new Date());
         yesterdayDate.add(5, -daysCount);
         return yesterdayDate;
     }
 
+    /**
+     * @param medicationRequests Lista recept
+     * @return Jeśli istnieje, zwraca najdłużesz jeszcze aktywną receptę z listy recept
+     */
     public static Optional<MedicationRequest> getNewestMedicationRequestFromList
-            (ArrayList<MedicationRequest> medicationRequests) {
+    (ArrayList<MedicationRequest> medicationRequests) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern(HAPI_DATETIMETYPE_FORMAT_MR);
         if (medicationRequests.size() == 0)
             return Optional.empty();
@@ -61,8 +85,12 @@ public class Utils {
         }
     }
 
+    /**
+     * @param observations Lista obserwacji
+     * @return zwraca najnowszą obserwację, której data wykonania nie przekracza obecnej daty
+     */
     public static Optional<Observation> getNewestObservationFromList
-            (ArrayList<Observation> observations) {
+    (ArrayList<Observation> observations) {
         if (observations.size() == 0)
             return Optional.empty();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern(HAPI_DATETIMETYPE_FORMAT_OBS);
