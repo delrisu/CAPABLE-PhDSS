@@ -5,6 +5,9 @@ import ca.uhn.fhir.rest.client.api.IGenericClient;
 import lombok.Getter;
 import lombok.Setter;
 
+/**
+ * Klasa utrzymująca połączenie z serwerem HAPI FHIR
+ */
 @Getter
 @Setter
 public class Connection {

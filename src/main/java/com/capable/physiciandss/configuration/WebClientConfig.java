@@ -7,6 +7,9 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.client.WebClient;
 
+/**
+ * Konfiguracja zapewniająca działanie WebClient, pozwala na dependency injection
+ */
 @Configuration
 public class WebClientConfig {
     @Bean
