@@ -19,6 +19,9 @@ import java.util.*;
 
 import static com.capable.physiciandss.utils.Constants.*;
 
+/**
+ * Klasa zawierająca process-flow serwisu
+ */
 public class ProcessFlow {
     protected static final Logger log =
             LoggerFactory.getLogger(ProcessFlow.class);
@@ -26,10 +29,13 @@ public class ProcessFlow {
     private final DeonticsRequestService deonticsRequestService = new DeonticsRequestService();
     private final GoComService goComService = new GoComService();
 
+    /**
+     * Metoda rozpoczynająca process flow
+     */
     public void startProcessFlow() {
         this.CheckCommunications();
     }
-
+    
     private void CheckCommunications() {
         ArrayList<Communication> communicationList = (ArrayList<Communication>) hapiRequestService
                 .getCommunicationList(Communication.CommunicationStatus.INPROGRESS);
