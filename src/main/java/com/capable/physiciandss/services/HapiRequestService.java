@@ -160,14 +160,11 @@ public class HapiRequestService {
         return communications;
     }
 
-    public String createObservation(String system, String ontologyCoding, Observation.ObservationStatus status) {
-        log.info("Creating observation with system: " + system + ", ontologyCoding: " +
-                ontologyCoding + " with status: " + status.toCode());
+    public String createObservation(Coding coding, Observation.ObservationStatus status) {
+        log.info("Creating observation with system: " + coding.getSystem() + ", ontologyCoding: " +
+                coding.getCode() + " with status: " + status.toCode());
         Observation observation = new Observation();
         CodeableConcept codeableConcept = new CodeableConcept();
-        Coding coding = new Coding();
-        coding.setSystem(system);
-        coding.setCode(ontologyCoding);
         ArrayList<Coding> codings = new ArrayList<>();
         codings.add(coding);
         codeableConcept.setCoding(codings);
