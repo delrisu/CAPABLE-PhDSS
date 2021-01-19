@@ -103,12 +103,9 @@ public class ProcessFlow {
                     } else {
                         deonticsRequestService
                                 .postEnact(META_GUIDELINE_NAME + ".pf", patientId)
-                                .subscribe(postEnactResult -> deonticsRequestService
-                                        .getEnactmentsByEnactmentId(postEnactResult.getEnactmentid())
-                                        .subscribe(
-                                                enactments -> handleEnactment(enactments[0], patientId), getEnactException -> {
-                                                }), postEnactException -> {
-                                });
+                                .subscribe(postEnactResult -> {
+                                    handleTasks(postEnactResult.getEnactmentid(), patientId, postEnactResult.getDresessionid(), Optional.empty());
+                                }, postEnactException -> {});
                     }
                 }, pathwayException -> {
                 });
@@ -273,7 +270,7 @@ public class ProcessFlow {
         log.debug("[ifReportedDataTaskDoesntExist]\tTask with given code doesnt exist");
         Coding coding = ontologyCoding.getCoding();
         String observationId = hapiRequestService
-                .createObservation(coding.getSystem(), coding.getCode(), Observation.ObservationStatus.PRELIMINARY);
+                .createObservation(coding, Observation.ObservationStatus.PRELIMINARY);
         hapiRequestService
                 .createTask(new ReferenceHandling(patientId).getReference(), new ReferenceHandling(observationId).getReference());
         hapiRequestService
