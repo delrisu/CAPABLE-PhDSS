@@ -27,7 +27,7 @@ public class GoComService extends RootService {
 
     public Mono<PingResponse> askGoComToCheckForConflicts(Reference medicationRequestReference) {
         return webClient.post()
-                .uri(Constants.GOCOM_BASE_URL + "/Ping")
+                .uri("/Ping")
                 .body(Mono.just(new Ping(medicationRequestReference)), Ping.class)
                 .retrieve()
                 .onStatus(HttpStatus::isError, response -> onError(response, "PingGoCom"))
