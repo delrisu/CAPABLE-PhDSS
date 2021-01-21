@@ -28,7 +28,7 @@ public class DeonticsRequestService extends RootService {
     public DeonticsRequestService() {
         log = LoggerFactory.getLogger(this.getClass().getName());
         ApplicationContext context = new AnnotationConfigApplicationContext(WebClientConfig.class);
-        webClient = context.getBean("webClient", WebClient.class);
+        webClient = context.getBean("webClientDeontics", WebClient.class);
         log.info("DeonticsRequestService has been created");
     }
 

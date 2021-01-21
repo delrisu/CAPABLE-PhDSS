@@ -21,7 +21,7 @@ public class GoComService extends RootService {
     public GoComService() {
         log = LoggerFactory.getLogger(this.getClass().getName());
         ApplicationContext context = new AnnotationConfigApplicationContext(WebClientConfig.class);
-        webClient = context.getBean("webClient", WebClient.class);
+        webClient = context.getBean("webClientGoCom", WebClient.class);
         log.info("GoComService has been created");
     }
 
