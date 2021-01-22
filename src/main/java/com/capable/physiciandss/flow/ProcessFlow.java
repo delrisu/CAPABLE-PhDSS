@@ -8,7 +8,8 @@ import com.capable.physiciandss.services.DeonticsRequestService;
 import com.capable.physiciandss.services.GoComService;
 import com.capable.physiciandss.services.HapiRequestService;
 import com.capable.physiciandss.utils.OntologyCodingHandlingDeontics;
-import com.capable.physiciandss.utils.ReferenceHandling;
+import com.capable.physiciandss.utils.ReferenceHandler;
+import com.capable.physiciandss.model.gocom.ReferenceHelper;
 import com.capable.physiciandss.utils.Utils;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.hl7.fhir.r4.model.*;
@@ -272,7 +273,7 @@ public class ProcessFlow {
         String observationId = hapiRequestService
                 .createObservation(coding, Observation.ObservationStatus.PRELIMINARY);
         hapiRequestService
-                .createTask(new ReferenceHandling(patientId).getReference(), new ReferenceHandling(observationId).getReference());
+                .createTask(new ReferenceHandler(patientId).getReference(), new ReferenceHandler(observationId).getReference());
         hapiRequestService
                 .createCommunication(Communication.CommunicationStatus.PREPARATION, observationId);
         log.debug("[ifReportedDataTaskDoesntExist]\tPut communication resource with reference at medication request in HAPI FHIR");
@@ -498,9 +499,9 @@ public class ProcessFlow {
                 .createMedicationRequest(medicationRequest, MedicationRequest.MedicationRequestStatus.DRAFT,
                         MedicationRequest.MedicationRequestIntent.PROPOSAL, patientId);
         hapiRequestService
-                .createTask(new ReferenceHandling(patientId).getReference(), new ReferenceHandling(medicationRequestId).getReference());
+                .createTask(new ReferenceHandler(patientId).getReference(), new ReferenceHandler(medicationRequestId).getReference());
         goComService
-                .askGoComToCheckForConflicts(new ReferenceHandling(medicationRequestId).getReference())
+                .askGoComToCheckForConflicts(new ReferenceHelper(new ReferenceHandler(medicationRequestId).getReference()))
                 .subscribe(pingResponse -> {
                             if (pingResponse.isIfResolvedConflict()) {
                                 log.debug("[ifInteractiveMedicationRequestTaskDoesntExist]\tGoCom has resolved conflict!");
