@@ -291,14 +291,14 @@ public class ProcessFlow {
             if (SNOMED_CODING_HAPI.equals(codingHandling.getSystem())) {
                 switch (codingHandling.getCode()) {
                     case IMMUNOTHERAPY_CODE:
-                        log.debug("[handleAbstractedData]\tFound immunotherapy case for patient with id: " + patientId);
+                        log.debug("[handleAbstractedData]\tFound immunotherapy data item for patient with id: " + patientId);
                         return handleOnImmunotherapy(patientId, itemDataValue);
                     case COMPLICATED_DIARRHEA_CODE:
-                        log.debug("[handleAbstractedData]\tFound complicated diarrhea case for patient with id: " + patientId);
+                        log.debug("[handleAbstractedData]\tFound complicated diarrhea data item for patient with id: " + patientId);
                         return handleComplicatedDiarrhea(patientId, itemDataValue,
                                 yesterdayDate);
                     case PERSISTENT_DIARRHEA_CODE:
-                        log.debug("[handleAbstractedData]\tFound persistent diarrhea case for patient with id: " + patientId);
+                        log.debug("[handleAbstractedData]\tFound persistent diarrhea data item for patient with id: " + patientId);
                         return handlePersistentDiarrhea(patientId, itemDataValue,
                                 yesterdayDate, twoDaysAgoDate, threeDaysAgoDate);
                     default:
