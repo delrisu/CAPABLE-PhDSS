@@ -161,7 +161,7 @@ public class HapiRequestService {
         return communications;
     }
 
-    public String createObservation(Coding coding, Observation.ObservationStatus status) {
+    public String createObservation(String patientId, Coding coding, Observation.ObservationStatus status) {
         log.info("Creating observation with system: " + coding.getSystem() + ", ontologyCoding: " +
                 coding.getCode() + " with status: " + status.toCode());
         Observation observation = new Observation();
@@ -172,6 +172,8 @@ public class HapiRequestService {
         observation.setCode(codeableConcept);
         observation.setStatus(status);
 
+        Reference reference = new ReferenceHandler(patientId).getReference();
+        observation.setSubject(reference);
         MethodOutcome outcome = client.create().resource(observation).execute();
 
         log.debug(outcome.toString());
