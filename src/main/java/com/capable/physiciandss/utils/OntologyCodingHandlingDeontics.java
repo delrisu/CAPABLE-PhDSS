@@ -3,6 +3,7 @@ package com.capable.physiciandss.utils;
 import lombok.Data;
 import org.hl7.fhir.r4.model.Coding;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -36,7 +37,7 @@ public class OntologyCodingHandlingDeontics {
             splittedString = splittedString[1].split(" ");
             this.coding.setCode(splittedString[0]);
             if (splittedString.length > 1)
-                this.coding.setDisplay(splittedString[1]);
+                this.coding.setDisplay(String.join(" ",Arrays.copyOfRange(splittedString, 1,splittedString.length)));
         }
     }
 

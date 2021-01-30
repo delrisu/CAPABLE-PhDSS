@@ -6,6 +6,7 @@ import ca.uhn.fhir.rest.client.api.IGenericClient;
 import ca.uhn.fhir.util.BundleUtil;
 import com.capable.physiciandss.configuration.HapiConnectionConfig;
 import com.capable.physiciandss.hapi.Connection;
+import com.capable.physiciandss.utils.ReferenceHandler;
 import org.hl7.fhir.instance.model.api.IBaseBundle;
 import org.hl7.fhir.r4.model.*;
 import org.slf4j.Logger;
@@ -228,20 +229,19 @@ public class HapiRequestService {
      * @param status         Status z jakim zostanie utworzona obserwacja
      * @return Referencje na utworzony zasób (np. Observation/1)
      */
-    public String createObservation(String system, String ontologyCoding, Observation.ObservationStatus status) {
-        log.info("Creating observation with system: " + system + ", ontologyCoding: " +
-                ontologyCoding + " with status: " + status.toCode());
+    public String createObservation(String patientId, Coding coding, Observation.ObservationStatus status) {
+        log.info("Creating observation with system: " + coding.getSystem() + ", ontologyCoding: " +
+                coding.getCode() + " with status: " + status.toCode());
         Observation observation = new Observation();
         CodeableConcept codeableConcept = new CodeableConcept();
-        Coding coding = new Coding();
-        coding.setSystem(system);
-        coding.setCode(ontologyCoding);
         ArrayList<Coding> codings = new ArrayList<>();
         codings.add(coding);
         codeableConcept.setCoding(codings);
         observation.setCode(codeableConcept);
         observation.setStatus(status);
 
+        Reference reference = new ReferenceHandler(patientId).getReference();
+        observation.setSubject(reference);
         MethodOutcome outcome = client.create().resource(observation).execute();
 
         log.debug(outcome.toString());
@@ -276,9 +276,7 @@ public class HapiRequestService {
         log.info("Posting medicationRequest");
         medicationRequest.setStatus(status);
         medicationRequest.setIntent(medicationRequestIntent);
-        Reference reference = new Reference(patientId);
-        reference.setIdentifier(new Identifier().setValue(reference.getReference().split("/")[1]));
-        reference.setType(reference.getReference().split("/")[0]);
+        Reference reference = new ReferenceHandler(patientId).getReference();
         medicationRequest.setSubject(reference);
 
         MethodOutcome outcome = client.create().resource(medicationRequest).execute();
@@ -297,9 +295,7 @@ public class HapiRequestService {
         log.info("Creating communication with status: " + status.toCode() + ", referenceId: " + referenceId);
         Communication communication = new Communication();
         communication.setStatus(status);
-        Reference reference = new Reference(referenceId);
-        reference.setIdentifier(new Identifier().setValue(reference.getReference().split("/")[1]));
-        reference.setType(reference.getReference().split("/")[0]);
+        Reference reference = new ReferenceHandler(referenceId).getReference();
         Communication.CommunicationPayloadComponent payloadComponent = new Communication.CommunicationPayloadComponent();
         payloadComponent.setContent(reference);
         ArrayList<Communication.CommunicationPayloadComponent> communicationPayloadComponents = new ArrayList<>();

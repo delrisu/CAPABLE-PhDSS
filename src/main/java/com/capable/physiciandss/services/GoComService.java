@@ -1,10 +1,8 @@
 package com.capable.physiciandss.services;
 
 import com.capable.physiciandss.configuration.WebClientConfig;
-import com.capable.physiciandss.model.gocom.Ping;
 import com.capable.physiciandss.model.gocom.PingResponse;
-import com.capable.physiciandss.utils.Constants;
-import org.hl7.fhir.r4.model.Reference;
+import com.capable.physiciandss.model.gocom.ReferenceHelper;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
@@ -27,7 +25,7 @@ public class GoComService extends RootService {
     public GoComService() {
         log = LoggerFactory.getLogger(this.getClass().getName());
         ApplicationContext context = new AnnotationConfigApplicationContext(WebClientConfig.class);
-        webClient = context.getBean("webClient", WebClient.class);
+        webClient = context.getBean("webClientGoCom", WebClient.class);
         log.info("GoComService has been created");
     }
 
@@ -35,10 +33,10 @@ public class GoComService extends RootService {
      * @param medicationRequestReference Referencja na receptę dla której chcemy sprawdzić możliwe konflikty
      * @return Obiekt zawierający informację czy GoCom rozwiązał jakiekolwiek problemy
      */
-    public Mono<PingResponse> askGoComToCheckForConflicts(Reference medicationRequestReference) {
+    public Mono<PingResponse> askGoComToCheckForConflicts(ReferenceHelper reference) {
         return webClient.post()
-                .uri(Constants.GOCOM_BASE_URL + "/Ping")
-                .body(Mono.just(new Ping(medicationRequestReference)), Ping.class)
+                .uri("/Ping")
+                .body(Mono.just(reference), ReferenceHelper.class)
                 .retrieve()
                 .onStatus(HttpStatus::isError, response -> onError(response, "PingGoCom"))
                 .onStatus(HttpStatus::is2xxSuccessful, response -> onSuccess("PingGoCom"))
