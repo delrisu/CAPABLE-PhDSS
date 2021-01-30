@@ -224,8 +224,8 @@ public class HapiRequestService {
     }
 
     /**
-     * @param system         Terminologia systemu
-     * @param ontologyCoding Medyczny byt w zadanej terminologii systemu
+     * @param patientId         Identyfikator pacjenta
+     * @param coding Medyczny byt w zadanej terminologii systemu
      * @param status         Status z jakim zostanie utworzona obserwacja
      * @return Referencje na utworzony zasób (np. Observation/1)
      */

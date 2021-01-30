@@ -30,7 +30,7 @@ public class GoComService extends RootService {
     }
 
     /**
-     * @param medicationRequestReference Referencja na receptę dla której chcemy sprawdzić możliwe konflikty
+     * @param reference Referencja na receptę dla której chcemy sprawdzić możliwe konflikty
      * @return Obiekt zawierający informację czy GoCom rozwiązał jakiekolwiek problemy
      */
     public Mono<PingResponse> askGoComToCheckForConflicts(ReferenceHelper reference) {
